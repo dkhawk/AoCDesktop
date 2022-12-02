@@ -1,4 +1,4 @@
-package aoc2022.day00
+package aoc2022.day02
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
@@ -98,7 +98,7 @@ fun DayApp(day: Day, scope: CoroutineScope) {
           Text("Reset")
         }
         Row(modifier = Modifier.padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically) {
+          verticalAlignment = Alignment.CenterVertically) {
           Checkbox(
             checked = day.useRealData,
             onCheckedChange = { day.updateDataSource(it) },

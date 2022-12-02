@@ -1,4 +1,4 @@
-package aoc2022.day00
+package aoc2022.day02
 
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue

@@ -54,7 +54,7 @@ fun appMain() = application {
   Window(
     onCloseRequest = ::exitApplication
   ) {
-    window.minimumSize = Dimension(1000, 1000)
+    window.minimumSize = Dimension(500, 500)
     DayApp(day, scope)
   }
 }
@@ -136,16 +136,6 @@ fun DayApp(day: Day, scope: CoroutineScope) {
       Spacer(modifier = Modifier.height(16.dp))
 
       TopElves(day.elves)
-
-      // val listState = rememberLazyListState()
-      // ElfList(elves = day.elves, elfCursor = day.elfCursor, day.topElves, listState)
-      //
-      // if (day.elfCursor > 0) {
-      //   scope.launch {
-      //     // Animate scroll to the 10th item
-      //     listState.animateScrollToItem(index = day.elfCursor)
-      //   }
-      // }
     }
   }
 }

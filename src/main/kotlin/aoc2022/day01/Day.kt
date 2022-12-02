@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import utils.InputNew
 
-const val day = 1
+const val day = 0
 const val year = 2022
 
 class TopItems<T>(
