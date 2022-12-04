@@ -1,5 +1,5 @@
-import aoc2022.day03.appMain
-import aoc2022.day03.Day
+import aoc2022.day04.appMain
+import aoc2022.day04.Day
 import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
@@ -12,7 +12,7 @@ fun main(args: Array<String>) {
         useRealData = false
         useRealData = true
         initialize()
-        part1()
+        // part1()
         part2()
       }
     }
