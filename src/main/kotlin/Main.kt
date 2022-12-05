@@ -12,7 +12,7 @@ fun main(args: Array<String>) {
         useRealData = false
         useRealData = true
         initialize()
-        // part1()
+        part1()
         part2()
       }
     }

@@ -5,6 +5,7 @@ package aoc2022.day05
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import java.util.Stack
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -36,7 +37,7 @@ move 1 from 1 to 2
 """
 
   private lateinit var moves: List<Move>
-  private lateinit var stacks: MutableList<MutableList<Char>>
+  private lateinit var stacks: List<List<Char>>
 
   init {
   }
@@ -58,12 +59,9 @@ move 1 from 1 to 2
   }
 
   private fun parseStacks(stacksInput: String): MutableList<MutableList<Char>> {
-    val lines = stacksInput.split("\n").filter { it.isNotBlank() }
-    val c = lines.last().last { it in '0'..'9' }
-    val size = c.toString().toInt()
-    println(size)
+    val lines = stacksInput.split("\n").filter { it.isNotBlank() }.dropLast(1)
 
-    val stacks = lines.dropLast(1).map { line ->
+    val stacks = lines.map { line ->
       line.windowed(4, 4, true).map { it[1] }
     }.transpose()
 
@@ -75,30 +73,36 @@ move 1 from 1 to 2
   }
 
   fun part1() {
+    val mutableStacks = stacks.map { ArrayDeque(it) }
+
     moves.forEach { move ->
-      val source = stacks[move.source]
-      val destination = stacks[move.destination]
-      destination.addAll(source.subList(source.size - move.quantity, source.size).reversed())
+      val source = mutableStacks[move.source]
+      val destination = mutableStacks[move.destination]
       repeat(move.quantity) {
-        source.removeAt(source.lastIndex)
+        destination.add(source.removeLast())
       }
     }
 
-    val answer = stacks.map { it.last() }.joinToString("")
+    val answer = mutableStacks.map { it.last() }.joinToString("")
     println(answer)
   }
 
   fun part2() {
+    val mutableStacks = stacks.map { ArrayDeque(it) }
+
     moves.forEach { move ->
-      val source = stacks[move.source]
-      val destination = stacks[move.destination]
-      destination.addAll(source.subList(source.size - move.quantity, source.size))
+      val source = mutableStacks[move.source]
+      val destination = mutableStacks[move.destination]
+      val load = ArrayDeque<Char>(100)
       repeat(move.quantity) {
-        source.removeAt(source.lastIndex)
+        load.add(source.removeLast())
+      }
+      repeat(move.quantity) {
+        destination.add(load.removeLast())
       }
     }
 
-    val answer = stacks.map { it.last() }.joinToString("")
+    val answer = mutableStacks.map { it.last() }.joinToString("")
     println(answer)
   }
 
