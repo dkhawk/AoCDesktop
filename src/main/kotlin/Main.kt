@@ -13,10 +13,16 @@ fun main(args: Array<String>) {
         useRealData = true
         initialize()
 
-        part1()
-        part2()
+        // part1()
+        // part2()
+        // part1b()
+        // part2b()
+
         part1b()
+        part1c()
+
         part2b()
+        part2c()
 
         // val trials = 1000
         //

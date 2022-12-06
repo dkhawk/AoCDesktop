@@ -58,9 +58,17 @@ class Day(private val scope: CoroutineScope) {
     println(answer)
   }
 
+  fun part1c() {
+    println(findFirstUniquePacketWindowed(4))
+  }
+
   fun part2b() {
     val answer = findFirstUniquePacket(14)
     println(answer)
+  }
+
+  fun part2c() {
+    println(findFirstUniquePacketWindowed(14))
   }
 
   private fun findFirstUniquePacket(windowSize: Int): Int {
@@ -84,6 +92,36 @@ class Day(private val scope: CoroutineScope) {
       }
     }
     return -1
+  }
+
+  private fun findFirstUniquePacketWindowed(windowSize: Int): Int {
+    val letters = input.take(windowSize).groupingBy { it }.eachCount().toMutableMap()
+
+    return input.windowed(windowSize + 1, 1).withIndex().first { (index, queue) ->
+      val removed = queue.first()
+      val count = letters.getValue(removed)
+      if (count == 1) {
+        letters.remove(removed)
+      } else {
+        letters[removed] = count - 1
+      }
+
+      val c = queue.last()
+      letters[c] = letters[c]?.plus(1) ?: 1
+
+      letters.size == windowSize
+    }.index + windowSize + 1
+
+    // input.forEachIndexed { index, c ->
+    //   queue.add(c)
+    //   if (removed != null) {
+    //   }
+    //
+    //   if (letters.size == windowSize) {
+    //     return index + 1
+    //   }
+    // }
+    // return -1
   }
 
   fun execute() {
