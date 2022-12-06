@@ -12,8 +12,23 @@ fun main(args: Array<String>) {
         useRealData = false
         useRealData = true
         initialize()
-        // part1()
+
+        part1()
         part2()
+        part1b()
+        part2b()
+
+        // val trials = 1000
+        //
+        // println(measureTimeMillis { repeat(trials) { part1() } })
+        // println()
+        // println(measureTimeMillis {  repeat(trials) { part2() } })
+        // println()
+        // println(measureTimeMillis {  repeat(trials) { part1b() } })
+        // println()
+        // println(measureTimeMillis {  repeat(trials) { part2b() } })
+        // println()
+
       }
     }
   }

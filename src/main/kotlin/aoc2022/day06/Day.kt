@@ -1,20 +1,11 @@
 package aoc2022.day06
 
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import java.util.TreeSet
+import java.util.LinkedList
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import utils.InputNew
 
@@ -30,8 +21,8 @@ class Day(private val scope: CoroutineScope) {
   var delayTime by mutableStateOf( 500L)
   val maxDelay = 500L
 
-  // val sampleInput = """mjqjpqmgbljsphdztnvjfqwrcgsmlb"""
-  val sampleInput = """nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"""
+  val sampleInput = """mjqjpqmgbljsphdztnvjfqwrcgsmlb"""
+  // val sampleInput = """nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"""
   // val sampleInput = """mjqjpqmgbljsphdztnvjfqwrcgsmlb"""
 
   init {
@@ -62,6 +53,39 @@ class Day(private val scope: CoroutineScope) {
     println(answer.index + 14)
   }
 
+  fun part1b() {
+    val answer = findFirstUniquePacket(4)
+    println(answer)
+  }
+
+  fun part2b() {
+    val answer = findFirstUniquePacket(14)
+    println(answer)
+  }
+
+  private fun findFirstUniquePacket(windowSize: Int): Int {
+    val letters = mutableMapOf<Char, Int>()
+    val queue = BoundedQueue<Char>(windowSize)
+
+    input.forEachIndexed { index, c ->
+      letters[c] = letters[c]?.plus(1) ?: 1
+      val removed = queue.add(c)
+      if (removed != null) {
+        val count = letters.getValue(removed)
+        if (count == 1) {
+          letters.remove(removed)
+        } else {
+          letters[removed] = count - 1
+        }
+      }
+
+      if (letters.size == windowSize) {
+        return index + 1
+      }
+    }
+    return -1
+  }
+
   fun execute() {
     job?.cancel()
     job = scope.launch {
@@ -86,5 +110,23 @@ class Day(private val scope: CoroutineScope) {
     this.useRealData = useRealData
     initialize()
     reset()
+  }
+}
+
+class BoundedQueue<E>(private val limit: Int) {
+  val list = LinkedList<E>()
+
+  fun add(value: E): E? {
+    list.addFirst(value)
+    return if (list.size > limit) {
+      list.removeLast()
+    } else {
+      null
+    }
+  }
+
+  override fun toString(): String {
+    val s = list.joinToString(", ")
+    return "$s (${list.size})"
   }
 }
