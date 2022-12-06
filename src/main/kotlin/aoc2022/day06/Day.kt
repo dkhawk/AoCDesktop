@@ -37,7 +37,7 @@ class Day(private val scope: CoroutineScope) {
     }
   }
 
-  fun part1() {
+  fun part1a() {
     val answer = input.windowed(4, 1).withIndex().first {
       it.value.toSet().size == 4
     }
@@ -45,7 +45,7 @@ class Day(private val scope: CoroutineScope) {
     println(answer.index + 4)
   }
 
-  fun part2() {
+  fun part2a() {
     val answer = input.windowed(14, 1).withIndex().first {
       it.value.toSet().size == 14
     }
@@ -58,8 +58,10 @@ class Day(private val scope: CoroutineScope) {
     println(answer)
   }
 
-  fun part1c() {
-    println(findFirstUniquePacketWindowed(4))
+  fun part1() {
+    println(
+      findFirstUniquePacketWindowed(4)
+    )
   }
 
   fun part2b() {
@@ -67,8 +69,10 @@ class Day(private val scope: CoroutineScope) {
     println(answer)
   }
 
-  fun part2c() {
-    println(findFirstUniquePacketWindowed(14))
+  fun part2() {
+    println(
+      findFirstUniquePacketWindowed(14)
+    )
   }
 
   private fun findFirstUniquePacket(windowSize: Int): Int {
@@ -97,8 +101,11 @@ class Day(private val scope: CoroutineScope) {
   private fun findFirstUniquePacketWindowed(windowSize: Int): Int {
     val letters = input.take(windowSize).groupingBy { it }.eachCount().toMutableMap()
 
-    return input.windowed(windowSize + 1, 1).withIndex().first { (index, queue) ->
+    return input.windowed(windowSize + 1, 1).indexOfFirst { queue ->
       val removed = queue.first()
+      val added = queue.last()
+      letters[added] = letters[added]?.plus(1) ?: 1
+
       val count = letters.getValue(removed)
       if (count == 1) {
         letters.remove(removed)
@@ -106,22 +113,8 @@ class Day(private val scope: CoroutineScope) {
         letters[removed] = count - 1
       }
 
-      val c = queue.last()
-      letters[c] = letters[c]?.plus(1) ?: 1
-
       letters.size == windowSize
-    }.index + windowSize + 1
-
-    // input.forEachIndexed { index, c ->
-    //   queue.add(c)
-    //   if (removed != null) {
-    //   }
-    //
-    //   if (letters.size == windowSize) {
-    //     return index + 1
-    //   }
-    // }
-    // return -1
+    } + windowSize + 1
   }
 
   fun execute() {
