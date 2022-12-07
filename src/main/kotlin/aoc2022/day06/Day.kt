@@ -37,20 +37,20 @@ class Day(private val scope: CoroutineScope) {
     }
   }
 
-  fun part1a() {
+  fun part1a(): Int {
     val answer = input.windowed(4, 1).withIndex().first {
       it.value.toSet().size == 4
     }
 
-    println(answer.index + 4)
+    return answer.index + 4
   }
 
-  fun part2a() {
+  fun part2a(): Int {
     val answer = input.windowed(14, 1).withIndex().first {
       it.value.toSet().size == 14
     }
 
-    println(answer.index + 14)
+    return answer.index + 14
   }
 
   fun part1b() {
@@ -58,10 +58,9 @@ class Day(private val scope: CoroutineScope) {
     println(answer)
   }
 
-  fun part1() {
-    println(
-      findFirstUniquePacketWindowed(4)
-    )
+  fun part1e(): Int {
+    return findFirstUniquePacketWindowed(4)
+    // println(index)
   }
 
   fun part2b() {
@@ -69,10 +68,54 @@ class Day(private val scope: CoroutineScope) {
     println(answer)
   }
 
-  fun part2() {
-    println(
-      findFirstUniquePacketWindowed(14)
-    )
+  fun part2e(): Int {
+    return findFirstUniquePacketWindowed(14)
+  }
+
+  fun part1d(): Int {
+    return usingIndices(4)
+    // println(index)
+  }
+
+  // This is able as fast as I can make the solution
+  private fun usingIndices(windowSize: Int): Int {
+    val letters = IntArray(26)
+    var uniqueLetters = 0
+
+    fun addLetter(added: Char) {
+      val index = added.toIndex()
+      if (letters[index]++ == 0) {
+        uniqueLetters += 1
+      }
+    }
+
+    fun removeLetter(removed: Char) {
+      val index = removed.toIndex()
+      letters[index]--
+      if (letters[index] == 0) {
+        uniqueLetters -= 1
+      }
+    }
+
+    var nextOut = 0
+    var nextIn = 0
+
+    while (nextIn < input.length) {
+      addLetter(input[nextIn++])
+      if (nextIn > windowSize) {
+        removeLetter(input[nextOut++])
+      }
+
+      if (uniqueLetters == windowSize) {
+        return nextIn
+      }
+    }
+
+    return -1
+  }
+
+  fun part2d(): Int {
+    return usingIndices(14)
   }
 
   private fun findFirstUniquePacket(windowSize: Int): Int {
@@ -143,6 +186,8 @@ class Day(private val scope: CoroutineScope) {
     reset()
   }
 }
+
+private fun Char.toIndex(): Int = this - 'a'
 
 class BoundedQueue<E>(private val limit: Int) {
   val list = LinkedList<E>()
