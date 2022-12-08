@@ -168,6 +168,35 @@ class NewGrid<T>(var width: Int, var height: Int, data: Collection<T>) {
 
   private fun toLocation(index: Int) = Vector(index % width, index / width)
 
+  fun forEachRowIndexed(function: (Int, List<T>) -> Unit) {
+    (0 until height).forEach {
+      function(it, getRow(it))
+    }
+  }
+
+  fun <R> mapRowIndexed(function: (Int, List<T>) -> R): List<R> {
+    return (0 until height).map {
+      function(it, getRow(it))
+    }
+  }
+
+  fun forEachColumnIndexed(function: (Int, List<T>) -> Unit) {
+    (0 until width).forEach { col ->
+      function(col, getColumn(col))
+    }
+  }
+
+  fun getRow(row: Int): List<T> {
+    val start = row * width
+    return data.subList(start, start + width)
+  }
+
+  fun getColumn(col: Int): List<T> {
+    return (0 until height).map { row ->
+      this[Vector(col, row)]!!
+    }
+  }
+
   fun find(function: (Vector, T) -> Boolean): Pair<Vector, T>? {
     return data.withIndex().firstOrNull { (index, t) ->
       function(toLocation(index), t)
@@ -176,6 +205,10 @@ class NewGrid<T>(var width: Int, var height: Int, data: Collection<T>) {
 
   fun getValue(location: Vector): T {
     return get(location) ?: throw Exception("Invalid location")
+  }
+
+  fun validLocation(Vector: Vector): Boolean  {
+    return Vector.x < width && Vector.y < height && Vector.x >= 0 && Vector.y >= 0
   }
 }
 
