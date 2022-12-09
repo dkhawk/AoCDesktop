@@ -1,5 +1,5 @@
-import aoc2022.day08.appMain
-import aoc2022.day08.Day
+import aoc2022.day09.appMain
+import aoc2022.day09.Day
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.runBlocking
 
@@ -10,7 +10,7 @@ fun main(args: Array<String>) {
   } else {
     runBlocking {
       Day(this).apply {
-        // useRealData = false
+        useRealData = false
         useRealData = true
         initialize()
 

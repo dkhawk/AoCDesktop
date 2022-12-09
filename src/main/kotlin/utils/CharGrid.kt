@@ -1,6 +1,7 @@
 package utils
 
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlin.math.sqrt
 
@@ -24,7 +25,7 @@ data class Vector(val x: Int = 0, val y: Int = 0) : Comparable<Vector> {
   fun distance(goal: Vector): Double {
     val dx = goal.x - x
     val dy = goal.y - y
-    return sqrt(((x*x) + (y*y)).toDouble())
+    return sqrt(((dx*dx) + (dy*dy)).toDouble())
   }
 
   fun abs(): Vector {
