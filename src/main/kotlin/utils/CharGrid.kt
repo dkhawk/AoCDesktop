@@ -115,7 +115,7 @@ enum class Heading8(val vector: Vector) {
   }
 }
 
-class NewGrid<T>(var width: Int, var height: Int, data: Collection<T>) {
+class NewGrid<T>(val width: Int, val height: Int, data: Collection<T>) {
   var data : MutableList<T>
 
   init {
@@ -181,6 +181,12 @@ class NewGrid<T>(var width: Int, var height: Int, data: Collection<T>) {
     }
   }
 
+  fun <R> mapRows(function: (List<T>) -> R): List<R> {
+    return (0 until height).map {
+      function(getRow(it))
+    }
+  }
+
   fun forEachColumnIndexed(function: (Int, List<T>) -> Unit) {
     (0 until width).forEach { col ->
       function(col, getColumn(col))
@@ -211,6 +217,8 @@ class NewGrid<T>(var width: Int, var height: Int, data: Collection<T>) {
   fun validLocation(Vector: Vector): Boolean  {
     return Vector.x < width && Vector.y < height && Vector.x >= 0 && Vector.y >= 0
   }
+
+  override fun toString(): String = mapRows { it.joinToString("") }.joinToString("\n")
 }
 
 interface Grid<T> {
