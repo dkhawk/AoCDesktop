@@ -160,8 +160,17 @@ class NewGrid<T>(val width: Int, val height: Int, data: Collection<T>) {
     }
   }
 
+  operator fun get(index: Int): T? {
+    return data[index]
+  }
+
   operator fun set(location: Vector, value: T): T {
     data[toIndex(location)] = value
+    return value
+  }
+
+  operator fun set(index: Int, value: T): T {
+    data[index] = value
     return value
   }
 

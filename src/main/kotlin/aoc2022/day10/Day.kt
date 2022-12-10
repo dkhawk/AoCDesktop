@@ -41,8 +41,6 @@ class Day(private val scope: CoroutineScope) {
     } else {
       sample2
     }
-
-    // inputElves = input.mapIndexed { index, snacks -> toElf(index, snacks) }
   }
 
   fun part1() {
@@ -52,23 +50,20 @@ class Day(private val scope: CoroutineScope) {
     val computer = Computer(program)
     val icIter = interestingCycles.iterator()
     var nextInterestingCycle = icIter.next()
+
     while (!computer.done) {
-      computer.step()
+      val x = computer.tick()
+      val clock = computer.clock
 
-      if (computer.clock >= nextInterestingCycle) {
-        val x = when (computer.program[computer.pc - 1]) {
-          is Instruction.Addx -> computer.previousX
-          Instruction.Noop -> computer.regX
-        }
-
-        val signalStrength = nextInterestingCycle * x
+      if (clock == nextInterestingCycle) {
+        val signalStrength = clock * x
         ss.add(signalStrength)
+        println("$clock * $x == $signalStrength")
         if (!icIter.hasNext()) break
         nextInterestingCycle = icIter.next()
       }
     }
 
-    println(ss)
     println(ss.sum())
   }
 
@@ -80,23 +75,58 @@ class Day(private val scope: CoroutineScope) {
 
     val display = NewGrid<Char>(40, 6, fill)
 
-    println(display)
-
     val program = parseProgram(input)
     val computer = Computer(program)
 
-    var sprite = (computer.regX - 1)..(computer.regX + 1)
+    var sprite: IntRange
+
+    val currentRow = mutableListOf<Char>()
 
     while (!computer.done) {
-      computer.tick()
+      val clock = computer.clock
+      val spriteMiddle = computer.tick()
+      sprite = moveSprite(spriteMiddle)
 
-
-      val x = when (computer.program[computer.pc - 1]) {
-        is Instruction.Addx -> computer.previousX
-        Instruction.Noop -> computer.regX
+      val pixel = if ((clock % 40) in sprite) {
+        '#'
+      } else {
+        '.'
       }
 
+      currentRow.add(pixel)
+      display[clock % 240] = pixel
+
+      // println("Start of cycle: $clock")
+      // val spriteString = printSprite(sprite)
+      // println("Sprite: $spriteString")
+      // println("   row: ${currentRow.joinToString("")}")
+      // println("End of $clock (x is ${computer.regX})")
+      // println()
+      // println()
+      if (currentRow.size % 40 == 0) {
+        println(currentRow.joinToString(""))
+        currentRow.clear()
       }
+    }
+
+    println()
+    println(display)
+  }
+
+  private fun printSprite(sprite: IntRange): String {
+    val out = CharArray(40)
+    repeat(40) {
+      out[it] = '.'
+    }
+    sprite.forEach {
+      out[it] = '#'
+    }
+
+    return out.joinToString("")
+  }
+
+  private fun moveSprite(x: Int): IntRange {
+    return (x - 1)..(x + 1)
   }
 
   fun parseProgram(program: List<String>): List<Instruction> {
@@ -146,9 +176,8 @@ class Computer(val program: List<Instruction>) {
   var clock: Int = 0
   var done = false
 
-  // val nextInstruction = program.iterator()
+  private val programIterator = program.iterator()
   var currentInstruction: Instruction? = null
-  // var currentInstructionFinishTime = 0
 
   fun step() {
     if (done) return
@@ -164,35 +193,59 @@ class Computer(val program: List<Instruction>) {
     }
   }
 
-  fun tick() {
-    if (done) return
+  fun tick(): Int {
+    if (done) return -1
+
+    val xDuring = regX
 
     // Are we already executing an instruction?
     if (currentInstruction != null) {
+      // println("finishing $currentInstruction")
       // finish the instruction
       currentInstruction?.invoke(this)
       currentInstruction = null
     } else {
-      currentInstruction = program[pc]
+      if (programIterator.hasNext()) {
+        currentInstruction = programIterator.next()
+        // println("new instruction $currentInstruction")
+      } else {
+        currentInstruction = null
+        done = true  // might drop the last instruction this way.  :-(
+      }
+      if (currentInstruction?.numCycles == 1) {
+        // this instruction takes one cycle, so we will need a new one next tick
+        currentInstruction = null
+      }
     }
+
+    clock += 1
+
+    return xDuring
   }
 }
 
-sealed class Instruction(val numCycles: Int) {
+sealed class Instruction() {
+  abstract val numCycles: Int
   abstract operator fun invoke(computer: Computer)
 
-  object Noop: Instruction(1) {
+  object Noop: Instruction() {
+    override val numCycles: Int = 1
     override operator fun invoke(computer: Computer) {
-      computer.clock += numCycles
-      computer.pc += 1
+    }
+
+    override fun toString(): String {
+      return "noop"
     }
   }
 
-  data class Addx(val value: Int): Instruction(2) {
+  data class Addx(val value: Int): Instruction() {
+    override val numCycles: Int = 2
     override operator fun invoke(computer: Computer) {
-      computer.clock += numCycles
       computer.regX += value
-      computer.pc += 1
+    }
+
+    override fun toString(): String {
+      return "addx $value"
     }
   }
 }
