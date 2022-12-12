@@ -136,6 +136,12 @@ class NewGrid<T>(val width: Int, val height: Int, data: Collection<T>) {
 
   fun getNeighbors(location: Vector) = location.neighbors().map { it to this[it] }
 
+  fun getValidNeighbors(location: Vector) = location.neighbors().mapNotNull { neighborLocation ->
+    this[neighborLocation]?.let { neighborValue ->
+      neighborLocation to neighborValue
+    }
+  }
+
   fun getNeighborsConstrained(location: Vector) =
     location.neighborsConstrained(bottom = height - 1, right = width - 1).map { it to this[it] }
   //

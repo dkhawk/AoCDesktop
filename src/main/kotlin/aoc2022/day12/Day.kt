@@ -3,6 +3,7 @@ package aoc2022.day12
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import java.util.Deque
 import java.util.PriorityQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -85,6 +86,53 @@ class Day(private val scope: CoroutineScope) {
     }
 
     println(paths.minByOrNull { it.second })
+  }
+
+  fun part2b() {
+    println("part2b")
+    val startValue = 'S' - 'a'
+    val finishValue = 'E' - 'a'
+
+    val start = input.find { vector, i -> i == startValue }!!.first
+    val finish = input.find { vector, i -> i == finishValue }!!.first
+
+    input[start] = 'a' - 'a'
+    input[finish] = 'z' - 'a'
+
+    dfs(input, finish)
+  }
+
+  private fun dfs(grid: NewGrid<Int>, start: Vector) {
+    val queue = ArrayDeque<Vector>()
+    val solved = mutableMapOf <Vector, Int>()
+
+    queue.addLast(start)
+    solved[start] = 0
+
+    while (queue.isNotEmpty()) {
+      val next = queue.removeFirst()
+      val nextElevation = grid.getValue(next)
+      val costOfCurrent = solved.getValue(next)
+      val costToNeighbor = costOfCurrent + 1
+
+      val vn = grid.getValidNeighbors(next).filter { (loc, otherElevation ) ->
+        // prune impossible routes
+        nextElevation <= otherElevation + 1
+      }
+
+      vn.forEach { (neighbor, neighborElevation) ->
+        if (solved.containsKey(neighbor)) {
+          // no need to continue here
+        } else {
+          solved[neighbor] = costToNeighbor
+          if (neighborElevation == 0) {
+            println(costToNeighbor)
+            return
+          }
+          queue.add(neighbor)
+        }
+      }
+    }
   }
 
   fun execute() {

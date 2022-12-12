@@ -10,12 +10,19 @@ fun main(args: Array<String>) {
   } else {
     runBlocking {
       Day(this).apply {
-        // useRealData = false
+        useRealData = false
         useRealData = true
         initialize()
 
         // part1()
-        part2()
+        println(measureTimeMillis {
+          part2()
+        })
+
+        initialize()
+        println(measureTimeMillis {
+          part2b()
+        })
       }
     }
   }
