@@ -22,6 +22,8 @@ import utils.InputNew
 const val day = 11
 const val year = 2022
 
+private var lcm: Long = 0L
+
 class Day(private val scope: CoroutineScope) {
   var useRealData by mutableStateOf(false)
   private lateinit var input: String
@@ -31,13 +33,18 @@ class Day(private val scope: CoroutineScope) {
   var delayTime by mutableStateOf( 500L)
   val maxDelay = 500L
 
-
   fun initialize() {
     input = if (useRealData) {
       val realInput = InputNew(year, day).readAsString()
       realInput
     } else {
       sampleInput
+    }
+
+    lcm = if (useRealData) {
+      9699690
+    } else {
+      96577
     }
 
     // inputElves = input.mapIndexed { index, snacks -> toElf(index, snacks) }
@@ -65,29 +72,70 @@ class Day(private val scope: CoroutineScope) {
 
   fun part2() {
     val monkeys = parseInput(input)
-    println(monkeys.map { it.items })
-    println(monkeys.map { it.operation })
-    println(monkeys.map { it.test })
-    // println(monkeys)
 
-    return
-
-    repeat(20) {
+    repeat(10000) {
       monkeys.forEach { monkey ->
-        val actions = monkey.go()
+        val actions = monkey.go2()
         actions.forEach { (item, targetMonkey) ->
           monkeys[targetMonkey].receive(item)
         }
       }
     }
 
-    println(monkeys.map { it.items })
-
     println(monkeys.map { it.inspectionCount })
-
+    println()
     val ics = monkeys.sortedByDescending { it.inspectionCount }.take(2).map { it.inspectionCount }
     println(ics[0])
     println(ics[1])
+    println(ics[0].toBigInteger() * ics[1].toBigInteger())
+    //
+    //
+    // val original = mutableMapOf<Int, List<Long>>()
+    //
+    // monkeys.forEach {
+    //   original[it.id] = it.items.toList()
+    //   it.items.clear()
+    // }
+    //
+    // original.forEach { (monkeyId, items) ->
+    //   val monkey = monkeys[monkeyId]
+    //   items.forEach { item ->
+    //     monkey.items.add(item)
+    //     println(monkeys.map { it.items })
+    //     val route = mutableListOf<Int>()
+    //
+    //     repeat(20) {
+    //       monkeys.forEach { monkey ->
+    //         val actions = monkey.go2()
+    //         actions.forEach { (item, targetMonkey) ->
+    //           monkeys[targetMonkey].receive(item)
+    //         }
+    //         val i = monkeys.indexOfFirst { it.items.isNotEmpty() }
+    //         route.add(i)
+    //       }
+    //     }
+    //
+    //     println(route)
+    //     monkeys.forEach {
+    //       it.items.clear()
+    //     }
+    //   }
+    // }
+
+
+    // // monkeys[0].items.add(98)
+    // monkeys[1].items.add(75)
+    // println(monkeys.map { it.items })
+    //
+    //
+    // println()
+    // println()
+    // println()
+    // println(monkeys.map { it.inspectionCount })
+    //
+    // val ics = monkeys.sortedByDescending { it.inspectionCount }.take(2).map { it.inspectionCount }
+    // println(ics[0])
+    // println(ics[1])
   }
 
   private fun parseInput(input: String): List<Monkey> {
@@ -160,42 +208,11 @@ class Day(private val scope: CoroutineScope) {
   }
 }
 
-class BigMonkey(
-  val id: Int,
-  val items: MutableList<BigInteger>,
-  val operation: BigOperation,
-  val test: BigInteger,
-  val trueAction: Int,
-  val falseAction: Int,
-  var inspectionCount: Int = 0
-) {
-  fun go(): List<Pair<BigInteger, Int>> {
-    val currentItems = items.toList()
-    items.clear()
-    inspectionCount += currentItems.count()
-    return currentItems.map { operation(it) }.map { item ->
-      item to (if (item % test == BigInteger.ZERO) trueAction else falseAction)
-    }
-  }
-
-  fun receive(item: BigInteger) {
-    items.add(item)
-  }
-
-  companion object {
-    fun fromMonkey(monkey: Monkey) : BigMonkey {
-      return BigMonkey(
-        monkey.id,
-        monkey.items.map { it.toBigInteger() }.toMutableList(),
-        BigOperation.from(monkey.operation),
-        monkey.test.toBigInteger(),
-        monkey.trueAction,
-        monkey.falseAction,
-        monkey.inspectionCount
-      )
-    }
-  }
-}
+class Item(
+  val startValue: Long,
+  var currentValue: Long,
+  val monkeys: MutableList<Int> = mutableListOf()
+)
 
 class Monkey(
   val id: Int,
@@ -215,8 +232,17 @@ class Monkey(
     }
   }
 
+  fun go2(): List<Pair<Long, Int>> {
+    val currentItems = items.toList()
+    items.clear()
+    inspectionCount += currentItems.count()
+    return currentItems.map { operation(it) }.map { item ->
+      item to (if (item % test == 0L) trueAction else falseAction)
+    }
+  }
+
   fun receive(item: Long) {
-    items.add(item)
+    items.add(item % lcm)
   }
 }
 
@@ -235,32 +261,6 @@ sealed class Operation {
 
   object Square: Operation() {
     override fun invoke(old: Long) = old * old
-  }
-}
-
-sealed class BigOperation {
-  abstract operator fun invoke(old: BigInteger): BigInteger
-
-  data class AddFixed(val addend: BigInteger): BigOperation() {
-    override fun invoke(old: BigInteger) = addend + old
-  }
-
-  data class MultFixed(val multiplier: BigInteger): BigOperation() {
-    override fun invoke(old: BigInteger) = multiplier * old
-  }
-
-  object Square: BigOperation() {
-    override fun invoke(old: BigInteger) = old * old
-  }
-
-  companion object {
-    fun from(operation: Operation): BigOperation {
-      return when(operation) {
-        is Operation.AddFixed -> AddFixed(operation.addend.toBigInteger())
-        is Operation.MultFixed -> MultFixed(operation.multiplier.toBigInteger())
-        Operation.Square -> Square
-      }
-    }
   }
 }
 

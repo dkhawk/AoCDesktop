@@ -10,8 +10,8 @@ fun main(args: Array<String>) {
   } else {
     runBlocking {
       Day(this).apply {
-        useRealData = false
-        // useRealData = true
+        // useRealData = false
+        useRealData = true
         initialize()
 
         // part1()
