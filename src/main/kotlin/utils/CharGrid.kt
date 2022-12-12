@@ -219,6 +219,12 @@ class NewGrid<T>(val width: Int, val height: Int, data: Collection<T>) {
     }?.let { toLocation(it.index) to it.value }
   }
 
+  fun findAll(function: (Vector, T) -> Boolean): List<Pair<Vector, T>> {
+    return data.withIndex().filter { (index, t) ->
+      function(toLocation(index), t)
+    }.map { toLocation(it.index) to it.value }
+  }
+
   fun getValue(location: Vector): T {
     return get(location) ?: throw Exception("Invalid location")
   }

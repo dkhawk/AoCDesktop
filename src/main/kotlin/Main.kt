@@ -1,5 +1,5 @@
-import aoc2022.day11.appMain
-import aoc2022.day11.Day
+import aoc2022.day12.appMain
+import aoc2022.day12.Day
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.runBlocking
 
