@@ -3,6 +3,7 @@ package aoc2022.day13
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlin.math.sign
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -56,22 +57,43 @@ class Day(private val scope: CoroutineScope) {
   }
 
   fun part1() {
-    input.take(10).forEach {
-      val left = parseTree(it.first())
-      val right = parseTree(it.last())
-      compareComponents(left, right)
-    }
+    val answer = input.mapIndexedNotNull { index, pair ->
+      val left = parseTree(pair.first())
+      val right = parseTree(pair.last())
+      val c = left.compare(right)
+      // println("$index:\n$left\n$right\n$c\n")
+      if (c == -1) {
+        index + 1
+      } else {
+        null
+      }
+    }.sum()
+    println(answer)
   }
 
-  private fun compareComponents(left: Component, right: Component) {
-    println("Comparing $left to $right")
+  fun part2() {
+    val items = input.flatten().toMutableList()
+    items.add("[[2]]")
+    items.add("[[6]]")
 
-    val lIter = (left as Component.CList).list.iterator()
-    val rIter = (right as Component.CList).list.iterator()
+    val sorted = items.map { parseTree(it) }.sortedWith((Comparator { o1, o2 -> o1.compare(o2) }))
 
-    //
-    // val l = lIter.next()
-    // val r = rIter.next()
+    val dividers = listOf(
+      parseTree("[[2]]"),
+      parseTree("[[6]]")
+    )
+
+    val answer = sorted.withIndex().filter { it.value in dividers  }
+
+    val m = answer.map { it.index + 1 }.fold(1) { a, b ->
+      a * b
+    }
+
+    println(m)
+
+    // println(sorted.withIndex().joinToString("\n") {
+    //   "${it.index + 1}: ${it.value}"
+    // })
   }
 
   private fun parseTree(str: String): Component {
@@ -79,7 +101,6 @@ class Day(private val scope: CoroutineScope) {
   }
 
   private fun parseTree(iter: PeekingIterator) : Component.CList {
-//    val items = mutableListOf<Component>()
     val component = Component.CList()
 
     while (iter.hasNext()) {
@@ -115,39 +136,6 @@ class Day(private val scope: CoroutineScope) {
     }
     val i = s.joinToString("").toInt()
     return Component.CInt(i)
-  }
-
-  // private fun parse(str: String): Component {
-  //   var result: Component? = null
-  //
-  //   var index = 0
-  //   var isList = false
-  //
-  //   while (index < str.length) {
-  //     when {
-  //       str[index] == '[' -> result.add(parse(str.substring(1)))
-  //       str[index] == ']' -> {
-  //         result.add(Component.CList(result.toList()))
-  //       }
-  //       str[index].isDigit() -> {
-  //         val start = index
-  //         while (index < str.length && str[index].isDigit()) {
-  //           index++
-  //         }
-  //         val value = str.substring(start, index).toInt()
-  //         result.add(Component.CInt(value))
-  //       }
-  //
-  //       else -> {
-  //         // Comma?
-  //       }
-  //     }
-  //   }
-  //
-  //   return Component.CList(result)
-  // }
-
-  fun part2() {
   }
 
   fun execute() {
@@ -237,18 +225,64 @@ class PeekingIterator(val str: String) {
 // }
 
 sealed class Component {
+  abstract fun compare(other: Component): Int
+
   data class CList(val list: MutableList<Component> = mutableListOf()) : Component() {
+    constructor(items: Collection<Int>) : this(items.map { CInt(it) }.toMutableList())
+
     override fun toString(): String = list.toString()
+
     fun add(ci: Component) {
       list.add(ci)
     }
-  }
-  data class CInt(val value: Int) : Component() {
-    override fun toString(): String = value.toString()
-  }
-  data class CString(val value: String) : Component() {
-    override fun toString(): String {
-      return value
+
+    override fun compare(other: Component): Int {
+      return when(other) {
+        is CList -> compareList(other)
+        is CInt -> compareList(CList(mutableListOf(other)))
+      }
+    }
+
+    private fun compareList(other: CList): Int {
+      val iter = list.iterator()
+      val oIter = other.list.iterator()
+
+      while (iter.hasNext() && oIter.hasNext()) {
+        val value = iter.next()
+        val otherValue = oIter.next()
+
+        val result = value.compare(otherValue)
+        if (result != 0) {
+          return result
+        }
+      }
+
+      if (!iter.hasNext() && !oIter.hasNext()) {
+        return 0
+      }
+
+      if (iter.hasNext()) {
+        return 1
+      }
+
+      return -1
     }
   }
+
+  data class CInt(val value: Int) : Component() {
+
+    override fun compare(other: Component): Int {
+      return when(other) {
+        is CList -> { other.compare(this) * -1 }
+        is CInt -> { (this.value - other.value).sign }
+      }
+    }
+
+    override fun toString(): String = value.toString()
+  }
+  // data class CString(val value: String) : Component() {
+  //   override fun toString(): String {
+  //     return value
+  //   }
+  // }
 }
