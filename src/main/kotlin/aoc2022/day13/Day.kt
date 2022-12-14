@@ -55,126 +55,66 @@ class Day(private val scope: CoroutineScope) {
     }
   }
 
-
   fun part1() {
-    // println(parseTree("[]"))
-    println(parseTree("[1]"))
-
-    // println(parseTree("[1,2,3]"))
-    // val pt = ParserTree()
-
-    // println(parse("[]"))
-
-
-    // parseTree("[[]]")
-    // input.map {
-    //   val leftString = it.first()
-    //   val rightString = it[1]
-    //
-    //   val left = parse(leftString)
-    // }
+    input.take(10).forEach {
+      val left = parseTree(it.first())
+      val right = parseTree(it.last())
+      compareComponents(left, right)
+    }
   }
 
-  // private fun parse(str: String): Component {
-  //   // The outermost component is always a list!
-  // }
-  //
-  // private fun parseTree(str: String): Component {
-  //   println("parsing '$str'")
-  //   var start = 0
-  //   var depth = 0
-  //   var index = 0
-  //
-  //   // if (str.first().isDigit())
-  //
-  //   return if (str.first() == '[') {
-  //     if (str.last() != ']') throw Exception("WTF: $str")
-  //     val list = str.substring(1, str.length - 1)
-  //     println("list: $list")
-  //     parseList(list)
-  //   } else {
-  //     Component.CInt(str.toInt())
-  //   }
-  //   //
-  //   // while (index < str.length) {
-  //   //   when (val c = str[index]) {
-  //   //     '[' -> depth += 1
-  //   //     ']' -> {
-  //   //       depth -= 1
-  //   //       if (depth == 0) {
-  //   //         parseTree(str.substring(start + 1, index))
-  //   //         start = index
-  //   //       }
-  //   //     }
-  //   //     else -> {
-  //   //       if (depth == 0) {
-  //   //         println(str.substring(index))
-  //   //       }
-  //   //     }
-  //   //   }
-  //   //   index += 1
-  //   // }
-  // }
-  //
+  private fun compareComponents(left: Component, right: Component) {
+    println("Comparing $left to $right")
 
-  private fun parseTree(str: String): Component.CList {
-    println("Parsing $str")
-    val items = mutableListOf<Component>()
+    val lIter = (left as Component.CList).list.iterator()
+    val rIter = (right as Component.CList).list.iterator()
 
-    var start = 0
-    var depth = 0
-    var index = 0
+    //
+    // val l = lIter.next()
+    // val r = rIter.next()
+  }
 
-    while (index < str.length) {
-      val c = str[index]
+  private fun parseTree(str: String): Component {
+    return parseTree(PeekingIterator(str)).list.first()
+  }
+
+  private fun parseTree(iter: PeekingIterator) : Component.CList {
+//    val items = mutableListOf<Component>()
+    val component = Component.CList()
+
+    while (iter.hasNext()) {
+      val c = iter.peek()
       when {
         c.isDigit() ->  {
-          start = index
-          while (index < str.length && str[index].isDigit()) { index += 1 }
-          items.add(Component.CInt(str.substring(start, index).toInt()))
-          start = index
+          val ci = parseInt(iter)
+          component.add(ci)
         }
-        str[index] == '[' -> {
-          // Find the end of this list
-          start = index
-          depth = 1
-          while (index < str.length) {
-            if (str[index] == '[') {
-              depth += 1
-            } else if (str[index] == ']') {
-              depth -= 1
-              if (depth == 0) {
-                val ss = str.substring(start, index)
-                println("substring: '$ss'")
-              }
-            }
-            index += 1
-          }
-
-          // start = index
-          // depth = 1
-          // while (index < str.length) {
-          //   if (str[index] == '[') {
-          //     depth += 1
-          //   } else if (str[index] == ']') {
-          //     depth -= 1
-          //     if (depth == 0) {
-          //       items.add(
-          //         parseList(str.substring(start + 1, index))
-          //       )
-          //       break
-          //     }
-          //   }
-          //   index += 1
-          // }
+        c == '[' -> {
+          iter.next()
+          val cl = parseTree(iter)
+          component.add(cl)
         }
-        str[index] == ',' -> {
-          index += 1
+        c == ']' -> {
+          iter.next()
+          return component
         }
-        else -> throw Exception("WTF: $index $str $start")
+        c == ',' -> {
+          iter.next()
+        }
+        else -> throw Exception("WTF?")
       }
     }
-    return Component.CList(items)
+
+    return component
+  }
+
+  private fun parseInt(iter: PeekingIterator): Component.CInt {
+    val s = mutableListOf<Char>()
+    while (iter.hasNext() && iter.peek().isDigit()) {
+      s.add(iter.next())
+    }
+    val i = s.joinToString("").toInt()
+    return Component.CInt(i)
   }
 
   // private fun parse(str: String): Component {
@@ -237,6 +177,32 @@ class Day(private val scope: CoroutineScope) {
   }
 }
 
+private fun String.peekingIterator(): PeekingIterator {
+  return PeekingIterator(this)
+}
+
+class PeekingIterator(val str: String) {
+  var peekBuffer: Char? = null
+  val iter = str.iterator()
+
+  fun hasNext(): Boolean = (peekBuffer != null) || iter.hasNext()
+
+  fun next(): Char {
+    return peekBuffer?.let {
+      peekBuffer = null
+      it
+    } ?: iter.next()
+  }
+
+  fun peek(): Char {
+    if (peekBuffer == null) {
+      peekBuffer = iter.next()
+    }
+
+    return peekBuffer!!
+  }
+}
+
 // class ParserTree() {
 //   var index = 0
 //   var currentList: MutableList<Component>? = null
@@ -271,8 +237,11 @@ class Day(private val scope: CoroutineScope) {
 // }
 
 sealed class Component {
-  data class CList(val list: List<Component>) : Component() {
+  data class CList(val list: MutableList<Component> = mutableListOf()) : Component() {
     override fun toString(): String = list.toString()
+    fun add(ci: Component) {
+      list.add(ci)
+    }
   }
   data class CInt(val value: Int) : Component() {
     override fun toString(): String = value.toString()
