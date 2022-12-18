@@ -1,5 +1,5 @@
-import aoc2022.day15.appMain
-import aoc2022.day15.Day
+import aoc2022.day18.appMain
+import aoc2022.day18.Day
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.runBlocking
 
@@ -15,7 +15,9 @@ fun main(args: Array<String>) {
         initialize()
 
         // part1()
-        part2()
+        // println(measureTimeMillis {
+          part2()
+        // })
       }
     }
   }

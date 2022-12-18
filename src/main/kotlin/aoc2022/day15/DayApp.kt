@@ -199,21 +199,13 @@ private fun SimArea(day: Day) {
                        style = Fill)
           }
 
-          // day.forwardStarts.forEach { fs ->
-          //   drawForward(fs, xScale, yScale, Color.LightGray.copy(0.5f), bound)
-          // }
-          //
-          // day.forwardEnds.forEach { fs ->
-          //   drawForward(fs, xScale, yScale, Color.LightGray.copy(0.5f), bound)
-          // }
-
-          day.backwardStarts.forEach { fs ->
-            drawBackward(fs, xScale, yScale, Color.Blue, bound)
+          day.forwards.forEach { fs ->
+            drawForward(fs, xScale, yScale, Color.Red.copy(alpha = 0.3f), bound)
           }
 
-          // day.backwardEnds.forEach { fs ->
-          //   drawBackward(fs, xScale, yScale, Color.LightGray.copy(0.5f), bound)
-          // }
+          day.backwards.forEach { fs ->
+            drawBackward(fs, xScale, yScale, Color.Blue.copy(alpha = 0.3f), bound)
+          }
 
           day.forwardCandidates.forEach { fs ->
             drawForward(fs, xScale, yScale, Color.Magenta, bound)
@@ -225,25 +217,14 @@ private fun SimArea(day: Day) {
 
           day.intersections.forEach { intersection ->
             drawCircle(center = intersection.scaled(xScale, yScale),
-                       color = Color.Blue,
+                       color = Color.Blue.copy(alpha = 0.5f),
                        radius = 9f,
                        style = Fill)
           }
 
-
-          // drawLine(color = Color.Red,
-          //          start = Vector(0, 0).scaled(xScale, yScale),
-          //          end = Vector(20, 0).scaled(xScale, yScale),
-          //          strokeWidth = 3f)
-
-          // drawCircle(center = Vector(14, 11).scaled(xScale, yScale),
-          //            color = Color.Red,
-          //            radius = 5f,
-          //            style = Fill)
-
           drawCircle(center = day.answer.scaled(xScale, yScale),
-                     color = Color.Yellow,
-                     radius = 3f,
+                     color = Color.Magenta,
+                     radius = 7f,
                      style = Fill)
         }
       }

@@ -8,6 +8,7 @@ annotation class Template(val template: String)
 annotation class Unsigned
 annotation class Signed
 annotation class AlphaOnly
+annotation class Remaining
 
 @kotlin.ExperimentalStdlibApi
 class InputFactory(private val inputClass: KClass<*>) {
@@ -67,11 +68,15 @@ class InputFactory(private val inputClass: KClass<*>) {
 
       val signed = parameter.annotations.find { it.annotationClass == Signed::class } != null
       val alphaOnly = parameter.annotations.find { it.annotationClass == AlphaOnly::class } != null
+      val allRemaining = parameter.annotations.find { it.annotationClass == Remaining::class } != null
 
       val expr = when (parameter.type.javaType) {
         Int::class.java -> if (signed) """[+-]?\d+""" else """\d+"""
         Long::class.java -> if (signed) """[+-]?\d+""" else """\d+"""
-        String::class.java -> if (alphaOnly) """[a-zA-Z]+""" else """\S+"""
+        String::class.java -> {
+          if (allRemaining) """.*"""
+          else if (alphaOnly) """[a-zA-Z]+""" else """\S+"""
+        }
         Char::class.java -> """\w"""
         else -> ".+"
       }

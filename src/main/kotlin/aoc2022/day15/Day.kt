@@ -136,6 +136,9 @@ class Day(private val scope: CoroutineScope) {
 
   var answer by mutableStateOf(Vector(0, 0))
 
+  val forwards = mutableStateListOf<Int>()
+  val backwards = mutableStateListOf<Int>()
+
   fun part2Init() {
     // input = input.drop(20) // .take(1)
     // input = input.take(1)
@@ -208,33 +211,36 @@ class Day(private val scope: CoroutineScope) {
     // }
     //
 
-    val forwards = mutableSetOf<Int>()
+    val f = mutableSetOf<Int>()
     forwardStarts.forEach {
-      forwards.add(it - 1)
+      f.add(it - 1)
 
-      forwards.add(it + 1)
-      forwards.add(it)
+      f.add(it + 1)
+      f.add(it)
     }
     forwardEnds.forEach {
-      forwards.add(it + 1)
+      f.add(it + 1)
 
-      forwards.add(it - 1)
-      forwards.add(it)
+      f.add(it - 1)
+      f.add(it)
     }
 
-    val backwards = mutableSetOf<Int>()
+    val back = mutableSetOf<Int>()
     backwardStarts.forEach {
-      backwards.add(it + 1)
+      back.add(it + 1)
 
-      backwards.add(it - 1)
-      backwards.add(it)
+      back.add(it - 1)
+      back.add(it)
     }
     backwardEnds.forEach {
-      backwards.add(it - 1)
+      back.add(it - 1)
 
-      backwards.add(it + 1)
-      backwards.add(it)
+      back.add(it + 1)
+      back.add(it)
     }
+
+    forwards.addAll(f)
+    backwards.addAll(back)
 
     forwards.forEach { f ->
       backwards.forEach { b ->
@@ -249,6 +255,8 @@ class Day(private val scope: CoroutineScope) {
         }
       }
     }
+
+    println("Searching ${intersections.size} candidates...")
 
     val answers = mutableSetOf<Vector>()
     intersections.forEach { candidate ->
@@ -273,22 +281,23 @@ class Day(private val scope: CoroutineScope) {
   }
 
   fun part2() {
-    beacons.addAll(input.map { it.beacon })
-
-    for (y: Int in 0..bound) {
-      for (x: Int in 0..bound) {
-        val v = Vector(x, y)
-        if (v !in beacons) {
-          if (input.none { reading ->
-              reading.contains(v)
-            }) {
-            answer = v
-            println(answer)
-            return
-          }
-        }
-      }
-    }
+    part2Init()
+    // beacons.addAll(input.map { it.beacon })
+    //
+    // for (y: Int in 0..bound) {
+    //   for (x: Int in 0..bound) {
+    //     val v = Vector(x, y)
+    //     if (v !in beacons) {
+    //       if (input.none { reading ->
+    //           reading.contains(v)
+    //         }) {
+    //         answer = v
+    //         println(answer)
+    //         return
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   private fun rangeOnRow(reading: Reading, row: Int): IntRange? {

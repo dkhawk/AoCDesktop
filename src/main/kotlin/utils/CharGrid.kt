@@ -86,6 +86,8 @@ data class Vector3dLong(val x: Long, val y: Long, val z: Long) {
 }
 
 data class Vector3d(val x: Int, val y: Int, val z: Int) {
+  constructor(list: List<Int>) : this(list[0], list[1], list[2])
+
   operator fun plus(other: Vector3d): Vector3d = Vector3d(x + other.x, y + other.y, z + other.z)
   operator fun minus(other: Vector3d): Vector3d = Vector3d(x - other.x, y - other.y, z - other.z)
 
@@ -96,6 +98,17 @@ data class Vector3d(val x: Int, val y: Int, val z: Int) {
   }
 
   override fun toString(): String = "<$x,$y,$z>"
+
+  fun getNeighbors() = Heading3d.values().map { this + it.vector }
+}
+
+enum class Heading3d(val vector: Vector3d) {
+  TOP(Vector3d(0, 0, -1)),
+  BOTTOM(Vector3d(0, 0, 1)),
+  FRONT(Vector3d(0, -1, 0)),
+  BACK(Vector3d(0, 1, 0)),
+  LEFT(Vector3d(-1, 0, 0)),
+  RIGHT(Vector3d(1, 0, 0)),
 }
 
 enum class Heading8(val vector: Vector) {
