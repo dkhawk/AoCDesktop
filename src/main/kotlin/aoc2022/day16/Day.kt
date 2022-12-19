@@ -100,8 +100,6 @@ class Day(private val scope: CoroutineScope) {
   private lateinit var paths: List<List<Int>>
 
   fun part1() {
-    // println(input)
-
     rooms = input.associateBy { it.index }
 
     println(rooms.size)
@@ -111,58 +109,30 @@ class Day(private val scope: CoroutineScope) {
       paths = p
     }
 
-    // val unopenedValves = rooms.keys.toSortedSet()
     val unopenedValves = input.filter { it.rate > 0 }.sortedByDescending { it.rate }
 
     println(unopenedValves.size)
 
-    // println(unopenedValves.joinToString("\n"))
+    val answer = openValvesWithPruningNoPath(0, unopenedValves, 30)
+    println(answer)
+  }
 
-    // val answer = openValves2(0, unopenedValves.map { it.index }, 30,)
+  fun part2() {
+    rooms = input.associateBy { it.index }
+
+    println(rooms.size)
+
+    createAllPaths(input).also { (c, p) ->
+      costs = c
+      paths = p
+    }
+
+    val unopenedValves = input.filter { it.rate > 0 }.sortedByDescending { it.rate }
+
+    println(unopenedValves.size)
 
     val answer = openValvesWithPruningNoPath(0, unopenedValves, 30)
     println(answer)
-    // println(answer.second.reversed().joinToString(", ") { indexToName.getValue(it) })
-  }
-
-  private fun openValvesWithPruning(
-    currentRoom: Int,
-    unopenedValves: List<Room>,
-    minutesLeft: Int,
-    path: List<Int> = emptyList()
-  ): Pair<Int, List<Int>> {
-    if (minutesLeft == 0 || unopenedValves.isEmpty()) {
-      return 0 to path
-    }
-
-    var mostPressure = 0
-    var bestPath = emptyList<Int>()
-    var valveIndex = 0
-
-    while (valveIndex < unopenedValves.size) {
-      val candidate = unopenedValves[valveIndex]
-      val remaining = unopenedValves.removeIndex(valveIndex)
-      // Cost in minutes if we open the candidate next
-      val cost = costs[currentRoom][candidate.index] + 1
-      val newMinutesRemaining = minutesLeft - cost
-      if (newMinutesRemaining >= 0) {
-        val pressureForThisCandidate = candidate.rate * newMinutesRemaining
-        val bestCaseForPath = remaining.map { it.rate * (newMinutesRemaining - 2) }.sum()
-        val bestCase = pressureForThisCandidate + bestCaseForPath
-        if (bestCase > mostPressure) {
-          val actual = openValvesWithPruning(candidate.index, remaining, newMinutesRemaining, path + candidate.index)
-          val actualPressure = actual.first + pressureForThisCandidate
-
-          if (actualPressure > mostPressure) {
-            mostPressure = actualPressure
-            bestPath = actual.second + candidate.index
-          }
-        }
-      }
-      valveIndex += 1
-    }
-
-    return mostPressure to bestPath
   }
 
   private fun openValvesWithPruningNoPath(
@@ -185,80 +155,18 @@ class Day(private val scope: CoroutineScope) {
       val newMinutesRemaining = minutesLeft - cost
       if (newMinutesRemaining >= 0) {
         val pressureForThisCandidate = candidate.rate * newMinutesRemaining
+        val actual = openValvesWithPruningNoPath(candidate.index, remaining, newMinutesRemaining)
+        val actualPressure = actual + pressureForThisCandidate
 
-        // val bestCaseForPath =
-        //   remaining.sumOf { it.rate * (newMinutesRemaining - (1 + costs[candidate.index][it.index])) }
-        // val bestCase = pressureForThisCandidate + bestCaseForPath
-
-        // if (bestCase >= mostPressure) {
-          val actual = openValvesWithPruningNoPath(candidate.index, remaining, newMinutesRemaining)
-          val actualPressure = actual + pressureForThisCandidate
-
-          if (actualPressure > mostPressure) {
-            mostPressure = actualPressure
-          }
-        // }
+        if (actualPressure > mostPressure) {
+          mostPressure = actualPressure
+        }
       }
       valveIndex += 1
     }
 
     return mostPressure
   }
-
-  private fun openValves(
-    currentRoom: Int,
-    unopenedValves: List<Int>,
-    minutesLeft: Int,
-    path: List<Int> = emptyList()
-  ): Pair<Int, List<Int>> {
-    if (minutesLeft == 0 || unopenedValves.isEmpty()) {
-      return 0 to path
-    }
-
-    val options = unopenedValves.map { targetRoom ->
-      // What is the cost in minutes to open the valve?
-      val cost = costs[currentRoom][targetRoom] + 1
-      val remainingValves = unopenedValves.filter { it != targetRoom }
-      val newMinutesLeft = minutesLeft - cost
-
-      val newPath = path + targetRoom
-
-      val pressureReleased = rooms.getValue(targetRoom).rate * newMinutesLeft
-      val (bestNextGain, bestPath) = openValves(targetRoom, remainingValves, newMinutesLeft, newPath)
-      val gain = pressureReleased + bestNextGain
-
-      gain to bestPath
-    }
-
-    return options.maxByOrNull { it.first } ?: (0 to path)
-  }
-
-  private fun openValves2(
-    currentRoom: Int,
-    unopenedValves: List<Int>,
-    minutesLeft: Int,
-  ): Int {
-    if (minutesLeft == 0 || unopenedValves.isEmpty()) {
-      return 0
-    }
-
-    val options = unopenedValves.map { targetRoom ->
-      // What is the cost in minutes to open the valve?
-      val cost = costs[currentRoom][targetRoom] + 1
-      val remainingValves = unopenedValves.filter { it != targetRoom }
-      val newMinutesLeft = minutesLeft - cost
-
-      val pressureReleased = rooms.getValue(targetRoom).rate * newMinutesLeft
-      val bestNextGain = openValves2(targetRoom, remainingValves, newMinutesLeft)
-      val gain = pressureReleased + bestNextGain
-
-      gain
-    }
-
-    return options.maxOf { it }
-  }
-
-
 
   private fun pathFrom(paths: List<List<Int>>, start: String, goal: String) =
     pathFrom(paths, getRoomIndex(start), getRoomIndex(goal)).map { indexToName.getValue(it) }
@@ -335,28 +243,6 @@ class Day(private val scope: CoroutineScope) {
       "${'A' + index} $l"
     }
     )
-  }
-
-  private fun findPath(map: Map<String, List<String>>, start: String, goal: String) {
-    var current = start
-    var cost = 0
-    val queue = ArrayDeque<String>()
-
-    queue.addLast(current)
-
-    val visited = HashMap<String, Int>()
-    visited[current] = 0
-
-    while (current != start && queue.isNotEmpty()) {
-      val next = queue.removeFirst()
-      cost += 1
-      if (next !in visited) {
-        visited[next] = cost
-      }
-    }
-  }
-
-  fun part2() {
   }
 
   fun execute() {
