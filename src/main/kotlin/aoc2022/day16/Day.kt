@@ -95,94 +95,196 @@ class Day(private val scope: CoroutineScope) {
     }
   }
 
+  private lateinit var rooms: Map<Int, Room>
+  private lateinit var costs: List<List<Int>>
+  private lateinit var paths: List<List<Int>>
+
   fun part1() {
-    val rooms = input
-    println(input.joinToString("\n"))
+    // println(input)
 
-    val allPaths = createAllPaths(input)
+    rooms = input.associateBy { it.index }
 
-    val unopenedValves = rooms.map { it.index }
-    var currentLocation = rooms[0]
-    var minutesLeft = 30
-    val best = findBestPath(allPaths, unopenedValves, currentLocation, minutesLeft)
+    println(rooms.size)
 
-    println(best)
+    createAllPaths(input).also { (c, p) ->
+      costs = c
+      paths = p
+    }
 
-    // val gains = rooms.map { targetRoom ->
-    //   val timeLost = allPaths[currentLocation][targetRoom.index] + 1
-    //   val pressureGained = targetRoom.rate * (minutesLeft - timeLost)
-    //   targetRoom.name to pressureGained
-    // }
-    //
-    // println(gains)
+    // val unopenedValves = rooms.keys.toSortedSet()
+    val unopenedValves = input.filter { it.rate > 0 }.sortedByDescending { it.rate }
 
+    println(unopenedValves.size)
 
-    // var currentLocation = "AA"
-    //
-    // findPath(map, currentLocation, unopenedValves.first().name)
+    // println(unopenedValves.joinToString("\n"))
 
-    // Greedy search
+    // val answer = openValves2(0, unopenedValves.map { it.index }, 30,)
+
+    val answer = openValvesWithPruningNoPath(0, unopenedValves, 30)
+    println(answer)
+    // println(answer.second.reversed().joinToString(", ") { indexToName.getValue(it) })
   }
 
-  var iterations = 0
+  private fun openValvesWithPruning(
+    currentRoom: Int,
+    unopenedValves: List<Room>,
+    minutesLeft: Int,
+    path: List<Int> = emptyList()
+  ): Pair<Int, List<Int>> {
+    if (minutesLeft == 0 || unopenedValves.isEmpty()) {
+      return 0 to path
+    }
 
-  val edges = mutableSetOf<String>()
+    var mostPressure = 0
+    var bestPath = emptyList<Int>()
+    var valveIndex = 0
 
-  private fun findBestPath(
-    map: List<List<Int>>,
-    unopenedValves: List<Int>,
-    currentRoom: Room,
+    while (valveIndex < unopenedValves.size) {
+      val candidate = unopenedValves[valveIndex]
+      val remaining = unopenedValves.removeIndex(valveIndex)
+      // Cost in minutes if we open the candidate next
+      val cost = costs[currentRoom][candidate.index] + 1
+      val newMinutesRemaining = minutesLeft - cost
+      if (newMinutesRemaining >= 0) {
+        val pressureForThisCandidate = candidate.rate * newMinutesRemaining
+        val bestCaseForPath = remaining.map { it.rate * (newMinutesRemaining - 2) }.sum()
+        val bestCase = pressureForThisCandidate + bestCaseForPath
+        if (bestCase > mostPressure) {
+          val actual = openValvesWithPruning(candidate.index, remaining, newMinutesRemaining, path + candidate.index)
+          val actualPressure = actual.first + pressureForThisCandidate
+
+          if (actualPressure > mostPressure) {
+            mostPressure = actualPressure
+            bestPath = actual.second + candidate.index
+          }
+        }
+      }
+      valveIndex += 1
+    }
+
+    return mostPressure to bestPath
+  }
+
+  private fun openValvesWithPruningNoPath(
+    currentRoom: Int,
+    unopenedValves: List<Room>,
     minutesLeft: Int,
   ): Int {
-    // if (iterations > 20) return 0
-    // iterations += 1
-    // println("$minutesLeft  $currentRoom  unopenedValves: $unopenedValves")
-    if (minutesLeft == 0) return 0
-    val currentLocation = currentRoom.index
-    val otherOpenValves = unopenedValves.filter { it != currentLocation }
-
-    if (otherOpenValves.isEmpty()) {
+    if (minutesLeft >= 0 || unopenedValves.isEmpty()) {
       return 0
     }
 
-    val options = mutableListOf<Pair<Room, Int>>()
+    var mostPressure = 0
+    var valveIndex = 0
 
-    if (currentLocation in unopenedValves) {
-      //   Calculate gain for opening the current value (basically this is just another "path")
-      val pressureReleased = (minutesLeft - 1) * currentRoom.rate
-      if (pressureReleased > 0) {
-        options.add(currentRoom to pressureReleased + findBestPath(
-          map,
-          otherOpenValves,
-          currentRoom,
-          minutesLeft - 1
-        ))
+    while (valveIndex < unopenedValves.size) {
+      val candidate = unopenedValves[valveIndex]
+      val remaining = unopenedValves.removeIndex(valveIndex)
+      // Cost in minutes if we open the candidate next
+      val cost = costs[currentRoom][candidate.index] + 1
+      val newMinutesRemaining = minutesLeft - cost
+      if (newMinutesRemaining >= 0) {
+        val pressureForThisCandidate = candidate.rate * newMinutesRemaining
+        val bestCaseForPath =
+          remaining.sumOf { it.rate * (newMinutesRemaining - (1 + costs[candidate.index][it.index])) }
+        val bestCase = pressureForThisCandidate + bestCaseForPath
+        if (bestCase >= mostPressure) {
+          val actual = openValvesWithPruningNoPath(candidate.index, remaining, newMinutesRemaining)
+          val actualPressure = actual + pressureForThisCandidate
+
+          if (actualPressure > mostPressure) {
+            mostPressure = actualPressure
+          }
+        }
       }
+      valveIndex += 1
     }
 
-    // There is a cycle here, but time runs down so... 🤷
-
-    val connectedRooms = currentRoom.connections
-      .map { other -> input[other] }.filter {
-        "${currentRoom.name}${it.name}" !in edges
-      }
-
-    options.addAll(connectedRooms.map {
-      edges.add("${currentRoom.name}${it.name}")
-      it to findBestPath(map, otherOpenValves, it, minutesLeft - 1)
-    })
-
-    val best = options.maxByOrNull { it.second }
-
-    return best?.second ?: 0
+    return mostPressure
   }
+
+  private fun openValves(
+    currentRoom: Int,
+    unopenedValves: List<Int>,
+    minutesLeft: Int,
+    path: List<Int> = emptyList()
+  ): Pair<Int, List<Int>> {
+    if (minutesLeft == 0 || unopenedValves.isEmpty()) {
+      return 0 to path
+    }
+
+    val options = unopenedValves.map { targetRoom ->
+      // What is the cost in minutes to open the valve?
+      val cost = costs[currentRoom][targetRoom] + 1
+      val remainingValves = unopenedValves.filter { it != targetRoom }
+      val newMinutesLeft = minutesLeft - cost
+
+      val newPath = path + targetRoom
+
+      val pressureReleased = rooms.getValue(targetRoom).rate * newMinutesLeft
+      val (bestNextGain, bestPath) = openValves(targetRoom, remainingValves, newMinutesLeft, newPath)
+      val gain = pressureReleased + bestNextGain
+
+      gain to bestPath
+    }
+
+    return options.maxByOrNull { it.first } ?: (0 to path)
+  }
+
+  private fun openValves2(
+    currentRoom: Int,
+    unopenedValves: List<Int>,
+    minutesLeft: Int,
+  ): Int {
+    if (minutesLeft == 0 || unopenedValves.isEmpty()) {
+      return 0
+    }
+
+    val options = unopenedValves.map { targetRoom ->
+      // What is the cost in minutes to open the valve?
+      val cost = costs[currentRoom][targetRoom] + 1
+      val remainingValves = unopenedValves.filter { it != targetRoom }
+      val newMinutesLeft = minutesLeft - cost
+
+      val pressureReleased = rooms.getValue(targetRoom).rate * newMinutesLeft
+      val bestNextGain = openValves2(targetRoom, remainingValves, newMinutesLeft)
+      val gain = pressureReleased + bestNextGain
+
+      gain
+    }
+
+    return options.maxOf { it }
+  }
+
+
+
+  private fun pathFrom(paths: List<List<Int>>, start: String, goal: String) =
+    pathFrom(paths, getRoomIndex(start), getRoomIndex(goal)).map { indexToName.getValue(it) }
+
+  private fun pathFrom(paths: List<List<Int>>, start: Int, goal: Int): List<Int> {
+    // assume fully connected!!
+    val path = mutableListOf<Int>()
+    var current = start
+    path.add(current)
+    while (current != goal) {
+      current = paths[current][goal]
+      path.add(current)
+    }
+
+    return path
+  }
+
+  val indexToName = mutableMapOf<Int, String>()
 
   private fun getRoomIndex(name: String) =
     nameToIndex.getOrElse(name) {
-      nameToIndex.size.also { nameToIndex[name] = it }
+      nameToIndex.size.also {
+        indexToName[it] = name
+        nameToIndex[name] = it
+      }
     }
 
-  private fun createAllPaths(rooms: List<Room>): List<List<Int>> {
+  private fun createAllPaths(rooms: List<Room>): Pair<List<List<Int>>, List<List<Int>>> {
     val numRooms = rooms.size
     val map = (0 until numRooms).map { outer ->
       (0 until numRooms).map { inner ->
@@ -190,28 +292,35 @@ class Day(private val scope: CoroutineScope) {
       }.toMutableList()
     }.toMutableList()
 
+    val paths = (0 until numRooms).map { outer ->
+      (0 until numRooms).map { inner ->
+        if (inner == outer) inner else 999
+      }.toMutableList()
+    }.toMutableList()
+
     rooms.forEach { room ->
       room.connections.forEach { connection ->
         map[room.index][connection] = 1
         map[connection][room.index] = 1
+        paths[room.index][connection] = connection
+        paths[connection][room.index] = room.index
       }
     }
-
-    // printMap(map)
 
     repeat(numRooms) { k ->
       repeat(numRooms) { i ->
         repeat(numRooms) { j ->
           if (map[i][j] > map[i][k] + map[k][j]) {
             map[i][j] = map[i][k] + map[k][j]
+            paths[i][j] = paths[i][k]
           }
         }
       }
     }
 
-    // printMap(map)
-
-    return map.map { it.map { it } }
+    val pathsFixed = paths as List<List<Int>>
+    val costs = map.map { it.map { it } }
+    return costs to pathsFixed
   }
 
   private fun printMap(map: List<List<Int>>) {
@@ -245,11 +354,6 @@ class Day(private val scope: CoroutineScope) {
     }
   }
 
-  private fun createMap(namedRooms: List<NamedRoom>): Map<String, List<String>> {
-
-    return namedRooms.associate { it.name to it.connections }
-  }
-
   fun part2() {
   }
 
@@ -278,4 +382,12 @@ class Day(private val scope: CoroutineScope) {
     initialize()
     reset()
   }
+}
+
+private fun <E> List<E>.removeIndex(index: Int): List<E> {
+  val out = this.subList(0, index).toMutableList()
+  if (index <= this.lastIndex) {
+    out.addAll(this.subList(index + 1, this.size))
+  }
+  return out
 }
