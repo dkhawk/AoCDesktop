@@ -11,7 +11,7 @@ fun main(args: Array<String>) {
     runBlocking {
       Day(this).apply {
         useRealData = false
-        // useRealData = true
+        useRealData = true
         initialize()
 
         part1()

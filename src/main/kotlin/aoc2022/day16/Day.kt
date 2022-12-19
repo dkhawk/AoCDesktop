@@ -170,7 +170,7 @@ class Day(private val scope: CoroutineScope) {
     unopenedValves: List<Room>,
     minutesLeft: Int,
   ): Int {
-    if (minutesLeft >= 0 || unopenedValves.isEmpty()) {
+    if (minutesLeft <= 0 || unopenedValves.isEmpty()) {
       return 0
     }
 
@@ -185,17 +185,19 @@ class Day(private val scope: CoroutineScope) {
       val newMinutesRemaining = minutesLeft - cost
       if (newMinutesRemaining >= 0) {
         val pressureForThisCandidate = candidate.rate * newMinutesRemaining
-        val bestCaseForPath =
-          remaining.sumOf { it.rate * (newMinutesRemaining - (1 + costs[candidate.index][it.index])) }
-        val bestCase = pressureForThisCandidate + bestCaseForPath
-        if (bestCase >= mostPressure) {
+
+        // val bestCaseForPath =
+        //   remaining.sumOf { it.rate * (newMinutesRemaining - (1 + costs[candidate.index][it.index])) }
+        // val bestCase = pressureForThisCandidate + bestCaseForPath
+
+        // if (bestCase >= mostPressure) {
           val actual = openValvesWithPruningNoPath(candidate.index, remaining, newMinutesRemaining)
           val actualPressure = actual + pressureForThisCandidate
 
           if (actualPressure > mostPressure) {
             mostPressure = actualPressure
           }
-        }
+        // }
       }
       valveIndex += 1
     }
