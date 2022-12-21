@@ -9,6 +9,7 @@ annotation class Unsigned
 annotation class Signed
 annotation class AlphaOnly
 annotation class Remaining
+annotation class Custom(val pattern: String)
 
 @kotlin.ExperimentalStdlibApi
 class InputFactory(private val inputClass: KClass<*>) {
@@ -69,8 +70,9 @@ class InputFactory(private val inputClass: KClass<*>) {
       val signed = parameter.annotations.find { it.annotationClass == Signed::class } != null
       val alphaOnly = parameter.annotations.find { it.annotationClass == AlphaOnly::class } != null
       val allRemaining = parameter.annotations.find { it.annotationClass == Remaining::class } != null
+      val custom: Regex? = parameter.annotations.find { it.annotationClass == Custom::class }?.let { annotation -> getCustomRe(annotation) }
 
-      val expr = when (parameter.type.javaType) {
+      val expr = custom ?: when (parameter.type.javaType) {
         Int::class.java -> if (signed) """[+-]?\d+""" else """\d+"""
         Long::class.java -> if (signed) """[+-]?\d+""" else """\d+"""
         String::class.java -> {
@@ -90,6 +92,11 @@ class InputFactory(private val inputClass: KClass<*>) {
       }
 
       return Mapper(name, parameter, "(?<$name>$expr)", function)
+    }
+
+    private fun getCustomRe(annotation: Annotation): Regex {
+      val c = annotation as Custom
+      return Regex(c.pattern)
     }
 
 //    fun parameterToRegex(parameter: Parameter): Mapper {
