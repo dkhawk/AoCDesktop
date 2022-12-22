@@ -29,7 +29,9 @@ class Input {
 class InputNew(private val year: Int, private val day: Int) {
   private val path = "/Users/dkhawk/IdeaProjects/aocDesktop/src/main/resources"
 
-  private val inputFileName = "$path/$year/${day.toString().padStart(2, '0')}.txt"
+  val baseDirectory = "$path/$year"
+
+  private val inputFileName = "$baseDirectory/${day.toString().padStart(2, '0')}.txt"
 
   fun readAsLines(filterBlankLines: Boolean = true): List<String> =
     File(inputFileName).readLines().filter { if (filterBlankLines) it.isNotBlank() else true }
