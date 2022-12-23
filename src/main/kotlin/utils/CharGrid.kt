@@ -20,6 +20,10 @@ data class Vector(val x: Int = 0, val y: Int = 0) : Comparable<Vector> {
     return this + heading.vector
   }
 
+  fun advance(heading: Heading8): Vector {
+    return this + heading.vector
+  }
+
   fun directionTo(end: Vector): Vector = (end - this)
 
   fun distance(goal: Vector): Double {
