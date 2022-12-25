@@ -1,5 +1,5 @@
-import aoc2022.day24.appMain
-import aoc2022.day24.Day
+import aoc2022.day25.appMain
+import aoc2022.day25.Day
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.runBlocking
 
@@ -14,7 +14,7 @@ fun main(args: Array<String>) {
         useRealData = true
         initialize()
 
-        // part1()
+        part1()
         // println(measureTimeMillis {
           part2()
         // })
