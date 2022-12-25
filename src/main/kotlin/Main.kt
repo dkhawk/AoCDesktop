@@ -14,9 +14,9 @@ fun main(args: Array<String>) {
         useRealData = true
         initialize()
 
-        part1()
+        // part1()
         // println(measureTimeMillis {
-        //   part2()
+          part2()
         // })
       }
     }

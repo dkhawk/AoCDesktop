@@ -51,44 +51,13 @@ class Day(private val scope: CoroutineScope) {
     val goal = Vector(input.last().lastIndexOf('.'), input.lastIndex)
 
     val grids = mutableListOf<NewGrid<Char>>()
-
-    val horizontalPatterns = grid.mapRowIndexed { row, line ->
-      if (row == 0 || row == grid.height - 1) {
-        null
-      } else {
-        line.mapIndexedNotNull { index, c -> if (c == '>') index - 1 else null } to
-          line.mapIndexedNotNull { index, c -> if (c == '<') index - 1 else null }
-      }
-    }
-
-    val verticalPatterns = grid.mapColumnIndexed { col, line ->
-      if (col == 0 || col == grid.width - 1) {
-        null
-      } else {
-        line.mapIndexedNotNull { index, c -> if (c == 'v') index - 1 else null } to
-          line.mapIndexedNotNull { index, c -> if (c == '^') index - 1 else null }
-      }
-    }
+    val horizontalPatterns = getHorizontalPatterns(grid)
+    val verticalPatterns = getVerticalPatterns(grid)
 
     val cycle = lcm(grid.width - 2, grid.height - 2)
 
-    repeat(cycle) {
-      grids.add(
-        createGrid(
-          it,
-          grid.width,
-          grid.height,
-          horizontalPatterns,
-          verticalPatterns,
-          start,
-          goal
-        )
-      )
-    }
-
-    val grid3d = Grid3d(grid.width, grid.height, cycle)
-    val t = grids.flatMap { it.data }
-    grid3d.setData(t.toCharArray())
+    val grid3d =
+      createGridStack(cycle, grids, grid, horizontalPatterns, verticalPatterns, start, goal)
 
     // println(grid3d)
 
@@ -107,6 +76,101 @@ class Day(private val scope: CoroutineScope) {
     println(path.lastIndex)
 
     // printMapWithPath(grid3d, path)
+  }
+
+  fun part2() {
+    val grid = NewGrid(input.first().length, input.size, input.joinToString("").toList())
+    val start = Vector(input.first().indexOf('.'), 0)
+    val goal = Vector(input.last().lastIndexOf('.'), input.lastIndex)
+
+    val grids = mutableListOf<NewGrid<Char>>()
+    val horizontalPatterns = getHorizontalPatterns(grid)
+    val verticalPatterns = getVerticalPatterns(grid)
+
+    val cycle = lcm(grid.width - 2, grid.height - 2)
+
+    val grid3d =
+      createGridStack(cycle, grids, grid, horizontalPatterns, verticalPatterns, start, goal)
+
+    // println(grid3d)
+
+    val start3d = Vector3d(start.x, start.y, 0)
+    val goal3d = Vector3d(goal.x, goal.y, 0)
+
+    println(start3d)
+    println(goal3d)
+
+    // val path = findPath(grid3d, start3d, goal3d)
+    // println(path)
+    // println(path.size)
+
+    val path0 = dfs(grid3d, start3d, goal3d)
+    // println(path0)
+    println(path0.lastIndex)
+
+    val path1 = dfs(grid3d, path0.last(), start3d)
+    // println(path1)
+    println(path1.lastIndex)
+
+    val path2 = dfs(grid3d, path1.last(), goal3d)
+    // println(path1)
+    println(path2.lastIndex)
+
+    val total = path0.lastIndex + path1.lastIndex + path2.lastIndex
+    println(total)
+  }
+
+  private fun createGridStack(
+    cycle: Int,
+    grids: MutableList<NewGrid<Char>>,
+    grid: NewGrid<Char>,
+    horizontalPatterns: List<Pair<List<Int>, List<Int>>?>,
+    verticalPatterns: List<Pair<List<Int>, List<Int>>?>,
+    start: Vector,
+    goal: Vector,
+  ): Grid3d {
+    repeat(cycle) {
+      grids.add(
+        createGrid(
+          it,
+          grid.width,
+          grid.height,
+          horizontalPatterns,
+          verticalPatterns,
+          start,
+          goal
+        )
+      )
+    }
+
+    val grid3d = Grid3d(grid.width, grid.height, cycle)
+    val t = grids.flatMap { it.data }
+    grid3d.setData(t.toCharArray())
+    return grid3d
+  }
+
+  private fun getVerticalPatterns(grid: NewGrid<Char>): List<Pair<List<Int>, List<Int>>?> {
+    val verticalPatterns = grid.mapColumnIndexed { col, line ->
+      if (col == 0 || col == grid.width - 1) {
+        null
+      } else {
+        line.mapIndexedNotNull { index, c -> if (c == 'v') index - 1 else null } to
+          line.mapIndexedNotNull { index, c -> if (c == '^') index - 1 else null }
+      }
+    }
+    return verticalPatterns
+  }
+
+  private fun getHorizontalPatterns(grid: NewGrid<Char>): List<Pair<List<Int>, List<Int>>?> {
+    val horizontalPatterns = grid.mapRowIndexed { row, line ->
+      if (row == 0 || row == grid.height - 1) {
+        null
+      } else {
+        line.mapIndexedNotNull { index, c -> if (c == '>') index - 1 else null } to
+          line.mapIndexedNotNull { index, c -> if (c == '<') index - 1 else null }
+      }
+    }
+    return horizontalPatterns
   }
 
   private fun printMapWithPath(grid3d: Grid3d, path: List<Vector3d>) {
@@ -186,45 +250,6 @@ class Day(private val scope: CoroutineScope) {
     return path.reversed()
   }
 
-/*
-  private fun dijkstra(grid3d: Grid3d, start: Vector3d, goal: Vector3d): Int {
-    val distances = mutableMapOf<Vector3d, Double>().withDefault { 10_000_000.0 }
-    val previous = mutableMapOf<Vector3d, Vector3d>()
-
-    distances[start] = 0.0
-
-    val queue = ArrayDeque<Vector3d>()
-
-    queue.addLast(start)
-
-    while (queue.isNotEmpty()) {
-
-    }
-
-    /*
- 1  function Dijkstra(Graph, source):
- 2
- 3      for each vertex v in Graph.Vertices:
- 4          dist[v] ← INFINITY
- 5          prev[v] ← UNDEFINED
- 6          add v to Q
- 7      dist[source] ← 0
- 8
- 9      while Q is not empty:
-10          u ← vertex in Q with min dist[u]
-11          remove u from Q
-12
-13          for each neighbor v of u still in Q:
-14              alt ← dist[u] + Graph.Edges(u, v)
-15              if alt < dist[v]:
-16                  dist[v] ← alt
-17                  prev[v] ← u
-18
-19      return dist[], prev[]
-     */
-  }
-*/
-
   private fun findPath(grid3d: Grid3d, start: Vector3d, goal: Vector3d): List<Vector3d> {
     // It is okay for this to be not quite right as it is a heuristic
     fun costHeuristic(v: Vector3d): Double = v.distance(goal.copy(z = v.z))
@@ -291,9 +316,6 @@ class Day(private val scope: CoroutineScope) {
     var m0 = i0
     var m1 = i1
 
-    println(i0)
-    println(i1)
-
     while (true) {
       if (m0 == m1) {
         return m0
@@ -305,8 +327,6 @@ class Day(private val scope: CoroutineScope) {
         m1 += i1
       }
     }
-
-    return -1
   }
 
   private fun createGrid(
@@ -378,9 +398,6 @@ class Day(private val scope: CoroutineScope) {
       c.isDigit() -> c + 1
       else -> '2'
     }
-  }
-
-  fun part2() {
   }
 
   fun execute() {
