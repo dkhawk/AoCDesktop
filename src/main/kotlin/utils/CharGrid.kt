@@ -1,6 +1,7 @@
 package utils
 
 import kotlin.math.abs
+import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlin.math.sqrt
@@ -104,6 +105,13 @@ data class Vector3d(val x: Int, val y: Int, val z: Int) {
   override fun toString(): String = "<$x,$y,$z>"
 
   fun getNeighbors() = Heading3d.values().map { this + it.vector }
+
+  fun distance(other: Vector3d): Double {
+    val dx2 = (x - other.x).toDouble().pow(2)
+    val dy2 = (y - other.y).toDouble().pow(2)
+    val dz2 = (z - other.z).toDouble().pow(2)
+    return sqrt(dx2 + dy2 + dz2)
+  }
 }
 
 enum class Heading3d(val vector: Vector3d) {
@@ -189,6 +197,10 @@ class NewGrid<T>(val width: Int, val height: Int, data: Collection<T>) {
     return data[index]
   }
 
+  operator fun get(x: Int, y: Int): T? {
+    return data[toIndex(x, y)]
+  }
+
   operator fun set(location: Vector, value: T): T {
     data[toIndex(location)] = value
     return value
@@ -199,7 +211,13 @@ class NewGrid<T>(val width: Int, val height: Int, data: Collection<T>) {
     return value
   }
 
+  operator fun set(x: Int, y: Int, value: T) {
+    data[toIndex(x, y)] = value
+  }
+
   private fun toIndex(location: Vector) = location.x + location.y * width
+
+  private fun toIndex(x: Int, y: Int) = x + y * width
 
   private fun toLocation(index: Int) = Vector(index % width, index / width)
 
@@ -212,6 +230,12 @@ class NewGrid<T>(val width: Int, val height: Int, data: Collection<T>) {
   fun <R> mapRowIndexed(function: (Int, List<T>) -> R): List<R> {
     return (0 until height).map {
       function(it, getRow(it))
+    }
+  }
+
+  fun <R> mapColumnIndexed(function: (Int, List<T>) -> R): List<R> {
+    return (0 until width).map {
+      function(it, getColumn(it))
     }
   }
 
