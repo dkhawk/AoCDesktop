@@ -1,4 +1,4 @@
-package aoc2022.day00
+package aoc2018.day00
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,7 +28,7 @@ class Day(private val scope: CoroutineScope) {
 
   fun initialize() {
     input = if (useRealData) {
-      val realInput = InputNew(aoc2018.day00.year, aoc2018.day00.day).readAsLines()
+      val realInput = InputNew(year, day).readAsLines()
       realInput
     } else {
       sampleInput

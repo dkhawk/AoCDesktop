@@ -6,6 +6,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import java.util.Deque
+import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -49,7 +51,7 @@ class Day(private val scope: CoroutineScope) {
     }
   }
 
-  data class Room(val name: String, val index: Int, val rate: Int, val connections: List<Int>, val turnedOnMinute: Int? = null)
+  data class Room(val name: String, val index: Int, val rate: Int, val connections: List<Int>)
 
   val nameToIndex = mutableMapOf<String, Int>()
 
@@ -114,8 +116,46 @@ class Day(private val scope: CoroutineScope) {
     println(unopenedValves.size)
 
     val answer = openValvesWithPruningNoPath(0, unopenedValves, 30)
-    println(answer)
+    println(answer.first)
+    println(answer.second.map { it.name }.joinToString("\n"))
   }
+
+  private fun openValvesWithPruningNoPath(
+    currentRoom: Int,
+    unopenedValves: List<Room>,
+    minutesLeft: Int,
+  ): Pair<Int, MutableList<Room>> {
+    if (minutesLeft <= 0 || unopenedValves.isEmpty()) {
+      return 0 to mutableListOf()
+    }
+
+    var mostPressure = 0
+    var valveIndex = 0
+    var bestPath = mutableListOf<Room>()
+
+    while (valveIndex < unopenedValves.size) {
+      val candidate = unopenedValves[valveIndex]
+      val remaining = unopenedValves.removeIndex(valveIndex)
+      // Cost in minutes if we open the candidate next
+      val cost = costs[currentRoom][candidate.index] + 1
+      val newMinutesRemaining = minutesLeft - cost
+      if (newMinutesRemaining >= 0) {
+        val pressureForThisCandidate = candidate.rate * newMinutesRemaining
+        val (actual, path) = openValvesWithPruningNoPath(candidate.index, remaining, newMinutesRemaining)
+        val actualPressure = actual + pressureForThisCandidate
+
+        if (actualPressure > mostPressure) {
+          mostPressure = actualPressure
+          bestPath = path.also { it.add(candidate) }
+        }
+      }
+      valveIndex += 1
+    }
+
+    return mostPressure to bestPath
+  }
+
+  val totalMinutes = 26
 
   fun part2() {
     rooms = input.associateBy { it.index }
@@ -131,14 +171,286 @@ class Day(private val scope: CoroutineScope) {
 
     println(unopenedValves.size)
 
-    val answer = openValvesWithPruningNoPath(0, unopenedValves, 30)
-    println(answer)
+    val best = bestPath(
+      unopenedValves = unopenedValves,
+      minutesLeft = totalMinutes,
+      currentRoom = 0,
+      elephantRoom = 0,
+      myRemainingTravelTime = 0,
+      elephantRemainingTravelTime = 0
+    )
+
+    println(best.totalGain)
+
+    val showFullReport = false
+
+    if (showFullReport) {
+      println(best.myGain)
+      println(best.elephantGain)
+      println()
+      println("My path:")
+      println(best.myPath.map { it }.reversed().joinToString("\n"))
+      println()
+      println("Elephant path:")
+      println(best.elephantPath.map { it }.reversed().joinToString("\n"))
+
+      println()
+      println()
+      // val myPath = ArrayDeque(best.myPath.reversed())
+      // val elephantPath = ArrayDeque(best.elephantPath.reversed())
+
+      val myPath = ArrayDeque(best.elephantPath.reversed())
+      val elephantPath = ArrayDeque(best.myPath.reversed())
+
+      var minute = 1
+      val openedValves = mutableListOf<Room>()
+
+      while (minute <= totalMinutes) {
+        println("== Minute $minute ==")
+        println("Open valves: ${openedValves.joinToString(", ")}")
+        println("Released pressure: ${openedValves.sumOf { it.rate }}")
+        if (myPath.isNotEmpty() && minute == myPath.first().openedAtMinute - 1) {
+          val valve = myPath.removeFirst()
+          println("You open valve ${valve.name}.")
+          openedValves.add(rooms.getValue(valve.id))
+        }
+
+        if (elephantPath.isNotEmpty() && minute == elephantPath.first().openedAtMinute - 1) {
+          val valve = elephantPath.removeFirst()
+          println("The elephant opens valve ${valve.name}.")
+          openedValves.add(rooms.getValue(valve.id))
+        }
+
+        println()
+        minute++
+      }
+    }
   }
 
-  private fun openValvesWithPruningNoPath(
-    currentRoom: Int,
+  data class ValveOpening(
+    val id: Int,
+    val name: String,
+    val openedAtMinute: Int,
+    val valveGain: Int,
+  )
+
+  data class Step(
+    val myGain: Int,
+    val elephantGain: Int,
+    val myPath: List<ValveOpening>,
+    val elephantPath: List<ValveOpening>,
+  ) {
+    val totalGain = myGain + elephantGain
+  }
+
+  private fun bestPath(
     unopenedValves: List<Room>,
     minutesLeft: Int,
+    currentRoom: Int,
+    elephantRoom: Int,
+    myRemainingTravelTime: Int,
+    elephantRemainingTravelTime: Int,
+  ): Step {
+    if (unopenedValves.isEmpty() || minutesLeft <= 0) {
+      return Step(0, 0, emptyList(), emptyList())
+    }
+
+    val sortedOptions = unopenedValves.map { targetValve ->
+      // What is the gain for opening any given value?
+      val costInMinutes = costs[currentRoom][targetValve.index] + 1
+      val minutesLeftAfterOpeningValve = minutesLeft - costInMinutes
+      val gain = targetValve.rate * minutesLeftAfterOpeningValve
+
+      // Estimate the max gain for the rest of the tree
+      val remainingValvesMaxGain = unopenedValves.sumOf { valve ->
+        if (valve == targetValve) {
+          0
+        } else {
+          (valve.rate) * (minutesLeftAfterOpeningValve + (costs[currentRoom][valve.index] + 1))
+        }
+      }
+
+      targetValve to (gain + remainingValvesMaxGain)
+    }.sortedByDescending { it.second }
+
+    val iterator = sortedOptions.iterator()
+    var bestStep = Step(0, 0, emptyList(), emptyList())
+
+    // Who is moving next?
+    if (myRemainingTravelTime == 0) {
+      while (iterator.hasNext()) {
+        val next = iterator.next()
+
+        if (next.second >= bestStep.totalGain) {
+          // So you're telling me there's still a chance...
+          val targetValve = next.first
+          val costInMinutes = costs[currentRoom][targetValve.index] + 1
+          val minutesLeftAfterOpeningValve = minutesLeft - costInMinutes
+
+          if (minutesLeftAfterOpeningValve >= 0) {
+            val gain = targetValve.rate * minutesLeftAfterOpeningValve
+
+            val remainingValves = unopenedValves.filterNot { it == targetValve }
+
+            // Who is going to finish first?
+            val nextTime = min(costInMinutes, elephantRemainingTravelTime)
+
+            val nextStep = bestPath(
+              remainingValves,
+              minutesLeft - nextTime,
+              targetValve.index,
+              elephantRoom,
+              costInMinutes - nextTime,
+              elephantRemainingTravelTime - nextTime
+            )
+
+            val actualGain = gain + nextStep.totalGain
+
+            if (actualGain > bestStep.totalGain) {
+              val path = nextStep.myPath + ValveOpening(
+                id = targetValve.index,
+                name = targetValve.name,
+                openedAtMinute = totalMinutes - (minutesLeftAfterOpeningValve - 1),
+                valveGain = gain
+              )
+              bestStep = nextStep.copy(
+                myGain = nextStep.myGain + gain,
+                myPath = path,
+              )
+            }
+          }
+        }
+      }
+    } else {
+      // Move the elephant
+      while (iterator.hasNext()) {
+        val next = iterator.next()
+
+        if (next.second >= bestStep.totalGain) {
+          // So you're telling me there's still a chance...
+          val targetValve = next.first
+          val costInMinutes = costs[elephantRoom][targetValve.index] + 1
+          val minutesLeftAfterOpeningValve = minutesLeft - costInMinutes
+
+          if (minutesLeftAfterOpeningValve >= 0) {
+            val gain = targetValve.rate * minutesLeftAfterOpeningValve
+
+            val remainingValves = unopenedValves.filterNot { it == targetValve }
+
+            // Who is going to finish first?
+            val nextTime = min(myRemainingTravelTime, costInMinutes)
+
+            val nextStep = bestPath(
+              remainingValves,
+              minutesLeft - nextTime,
+              currentRoom,
+              targetValve.index,
+              myRemainingTravelTime - nextTime,
+              costInMinutes - nextTime,
+            )
+
+            val actualGain = gain + nextStep.totalGain
+
+            if (actualGain > bestStep.totalGain) {
+              val path = nextStep.elephantPath + ValveOpening(
+                id = targetValve.index,
+                name = targetValve.name,
+                openedAtMinute = totalMinutes - (minutesLeftAfterOpeningValve - 1),
+                valveGain = gain
+              )
+
+              bestStep = nextStep.copy(
+                elephantGain = nextStep.elephantGain + gain,
+                elephantPath = path,
+              )
+            }
+          }
+        }
+      }
+    }
+
+    return bestStep
+  }
+
+  private fun bestPathWorks(unopenedValves: List<Room>, minutesLeft: Int, currentRoom: Int): Pair<Int, MutableList<Room>> {
+    if (unopenedValves.isEmpty() || minutesLeft <= 0) {
+      return 0 to mutableListOf()
+    }
+
+    // Upper limit on the gain -- it is not possible to do better than this value!
+    var upperLimit = unopenedValves.sumOf { it.rate } * minutesLeft
+    // println(upperLimit)
+
+    val sortedOptions = unopenedValves.map { targetValve ->
+      // What is the gain for opening any given value?
+      val costInMinutes = costs[currentRoom][targetValve.index] + 1
+      val minutesLeftAfterOpeningValve = minutesLeft - costInMinutes
+      val gain = targetValve.rate * minutesLeftAfterOpeningValve
+
+      // Estimate the max gain for the rest of the tree
+      val remainingValvesMaxGain = unopenedValves.sumOf { valve ->
+        if (valve == targetValve) {
+          0
+        } else {
+          (valve.rate) * (minutesLeftAfterOpeningValve + (costs[currentRoom][valve.index] + 1))
+        }
+      }
+
+      targetValve to (gain + remainingValvesMaxGain)
+    }.sortedByDescending { it.second }
+
+    // println(sortedOptions.joinToString("\n"))
+    // return 0 to mutableListOf()
+
+    val iterator = sortedOptions.iterator()
+
+    var bestSoFar = -1
+    var bestSoFarPath: MutableList<Room>? = null
+
+    while (iterator.hasNext()) {
+      val next = iterator.next()
+
+      if (next.second >= bestSoFar) {
+        // So you're telling me there's still a chance...
+        val targetValve = next.first
+        val costInMinutes = costs[currentRoom][targetValve.index] + 1
+        val minutesLeftAfterOpeningValve = minutesLeft - costInMinutes
+
+        if (minutesLeftAfterOpeningValve >= 0) {
+          val gain = targetValve.rate * minutesLeftAfterOpeningValve
+
+          val remainingValves = unopenedValves.filterNot { it == targetValve }
+
+          val (remainingGain, path) = bestPathWorks(remainingValves,
+                                                    minutesLeftAfterOpeningValve,
+                                                    targetValve.index)
+
+          val actualGain = gain + remainingGain
+
+          if (actualGain > bestSoFar) {
+            bestSoFar = actualGain
+            path.add(targetValve)
+            bestSoFarPath = path
+          }
+        }
+      }
+    }
+
+    if (bestSoFar < 0) {
+      // No path found?
+      return 0 to mutableListOf()
+    }
+
+    return bestSoFar to bestSoFarPath!!
+  }
+
+  private fun openValvesWithPruningNoPathPair(
+    unopenedValves: List<Room>,
+    minutesLeft: Int,
+    myRoom: Int,
+    myDestination: Int,
+    partnerRoom: Int,
+    partnerDestination: Int,
   ): Int {
     if (minutesLeft <= 0 || unopenedValves.isEmpty()) {
       return 0
@@ -151,11 +463,16 @@ class Day(private val scope: CoroutineScope) {
       val candidate = unopenedValves[valveIndex]
       val remaining = unopenedValves.removeIndex(valveIndex)
       // Cost in minutes if we open the candidate next
-      val cost = costs[currentRoom][candidate.index] + 1
+      val cost = costs[myRoom][candidate.index] + 1
       val newMinutesRemaining = minutesLeft - cost
       if (newMinutesRemaining >= 0) {
         val pressureForThisCandidate = candidate.rate * newMinutesRemaining
-        val actual = openValvesWithPruningNoPath(candidate.index, remaining, newMinutesRemaining)
+        val actual = openValvesWithPruningNoPathPair(remaining,
+                                                     newMinutesRemaining,
+                                                     candidate.index,
+                                                     -1,
+                                                     0,
+                                                     -1)
         val actualPressure = actual + pressureForThisCandidate
 
         if (actualPressure > mostPressure) {
@@ -167,6 +484,7 @@ class Day(private val scope: CoroutineScope) {
 
     return mostPressure
   }
+
 
   private fun pathFrom(paths: List<List<Int>>, start: String, goal: String) =
     pathFrom(paths, getRoomIndex(start), getRoomIndex(goal)).map { indexToName.getValue(it) }

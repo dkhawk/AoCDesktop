@@ -1,4 +1,4 @@
-package aoc2022.day00
+package aoc2018.day00
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Arrangement
@@ -44,7 +44,7 @@ fun appMain() = application {
     onCloseRequest = ::exitApplication
   ) {
     window.minimumSize = Dimension(500, 500)
-    aoc2018.day00.DayApp(day, scope)
+    DayApp(day, scope)
   }
 }
 
