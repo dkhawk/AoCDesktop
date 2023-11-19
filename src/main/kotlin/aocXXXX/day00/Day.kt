@@ -1,4 +1,4 @@
-package aoc2018.day00
+package aocXXXX.day00
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -7,9 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import utils.InputNew
-
-const val day = 2
-const val year = 2022
+import utils.packageToYearDay
 
 class Day(private val scope: CoroutineScope) {
   var useRealData by mutableStateOf(false)
@@ -28,6 +26,7 @@ class Day(private val scope: CoroutineScope) {
 
   fun initialize() {
     input = if (useRealData) {
+      val (year, day) = packageToYearDay(this.javaClass.packageName)
       val realInput = InputNew(year, day).readAsLines()
       realInput
     } else {

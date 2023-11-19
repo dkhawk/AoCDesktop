@@ -38,3 +38,8 @@ class InputNew(private val year: Int, private val day: Int) {
 
   fun readAsString(): String = File(inputFileName).readText()
 }
+
+fun packageToYearDay(packageName: String): Pair<Int, Int> {
+  val (yearStr, dayStr) = packageName.split(".")
+  return yearStr.substring(3).toInt() to dayStr.substring(3).toInt()
+}
