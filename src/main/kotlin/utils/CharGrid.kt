@@ -2,7 +2,6 @@ package utils
 
 import kotlin.math.abs
 import kotlin.math.pow
-import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlin.math.sqrt
 
@@ -742,4 +741,16 @@ class CharGrid() : Grid<Char> {
   operator fun set(it: Vector, value: Char) {
     this.setCell(it, value)
   }
+}
+
+fun Iterable<Vector>.unzip(): Pair<List<Int>, List<Int>> {
+  val expectedSize = 100
+  val listT = ArrayList<Int>(expectedSize)
+  val listR = ArrayList<Int>(expectedSize)
+  for (location in this) {
+    listT.add(location.x)
+    listR.add(location.y)
+  }
+  return listT to listR
+
 }
