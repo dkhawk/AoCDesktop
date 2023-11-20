@@ -52,6 +52,7 @@ data class Vector(val x: Int = 0, val y: Int = 0) : Comparable<Vector> {
   fun neighbors() = Heading.values().map { heading -> this.advance(heading) }
 
   fun cityDistanceTo(beacon: Vector): Int = abs(beacon.x - x) + abs(beacon.y - y)
+  fun inBounds(min: Vector, max: Vector) = this in min..max
 }
 
 enum class Direction {
