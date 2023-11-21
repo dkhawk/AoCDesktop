@@ -577,6 +577,14 @@ class CharGrid() : Grid<Char> {
     }
   }
 
+  fun setColumn(col: Int, c: Char) {
+    var index = col
+    repeat(height) {
+      grid[index] = c
+      index += width
+    }
+  }
+
   fun getRow(row: Int): CharArray {
     val start = row * width
     return grid.sliceArray(start until (start + width))
