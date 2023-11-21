@@ -6,7 +6,6 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import utils.CharGrid
 import utils.InputNew
 import utils.Vector
 import utils.packageToYearDay
@@ -44,25 +43,6 @@ class Day(private val scope: CoroutineScope) {
     }
   }
 
-  class Region(val origin: Vector) {
-    var size = 1
-
-    fun nextRing(dist: Int): List<Vector> {
-      val min = origin - Vector(dist, dist)
-      val max = origin + Vector(dist, dist)
-
-      val h = (min.y .. max.y).flatMap { yy ->
-        listOf(Vector(min.x, yy), Vector(max.x, yy))
-      }
-
-      val v = (min.x .. max.x).flatMap { xx ->
-        listOf(Vector(xx, min.y), Vector(xx, max.y))
-      }
-
-      return (h + v).toSortedSet().toList()
-    }
-  }
-
   fun part1() {
     val coords = input.map { it.split(", ").map { it.toInt() }.let {Vector(it[0], it[1])} }
 
@@ -76,8 +56,6 @@ class Day(private val scope: CoroutineScope) {
 
     val min = Vector(xmin - 1, ymin - 1)
     val max = Vector(xmax + 1, ymax + 1)
-
-    val grid = CharGrid(size = 20, '.')
 
     val regions = mutableMapOf<Vector, Long>()
 
@@ -114,18 +92,10 @@ class Day(private val scope: CoroutineScope) {
     val min = Vector(xmin - 1, ymin - 1)
     val max = Vector(xmax + 1, ymax + 1)
 
-    var total = 0
-
-    (min.y .. max.y).forEach { yy ->
-      (min.x .. max.x).forEach { xx ->
+    val total = (min.y .. max.y).sumOf { yy ->
+      (min.x .. max.x).count { xx ->
         val location = Vector(xx, yy)
-        val distances = coords.map { center ->
-          center.cityDistanceTo(location)
-        }
-        val sum = distances.sum()
-        if (sum < maxSum) {
-          total += 1
-        }
+        coords.sumOf { center -> center.cityDistanceTo(location) } < maxSum
       }
     }
 
