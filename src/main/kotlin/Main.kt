@@ -1,5 +1,5 @@
-import aoc2018.day08.appMain
-import aoc2018.day08.Day
+import aoc2018.day09.appMain
+import aoc2018.day09.Day
 import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
