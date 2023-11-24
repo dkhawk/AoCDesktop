@@ -1,11 +1,10 @@
-import aoc2018.day09.appMain
-import aoc2018.day09.Day
+import aoc2018.day11.Day
 import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
   val desktopApp = args.contains("desktop")
   if (desktopApp) {
-    appMain()
+//    appMain()
   } else {
     runBlocking {
       Day(this).apply {

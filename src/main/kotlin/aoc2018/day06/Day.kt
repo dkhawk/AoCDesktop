@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import utils.InputNew
 import utils.Vector
 import utils.packageToYearDay
+import utils.range
 import utils.unzip
 
 class Day(private val scope: CoroutineScope) {
@@ -127,8 +128,4 @@ class Day(private val scope: CoroutineScope) {
     initialize()
     reset()
   }
-}
-
-private fun List<Int>.range(): Pair<Int, Int> {
-  return this.minOf { it } to this.maxOf { it }
 }

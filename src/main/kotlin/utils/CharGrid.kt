@@ -215,9 +215,9 @@ class NewGrid<T>(val width: Int, val height: Int, data: Collection<T>) {
     data[toIndex(x, y)] = value
   }
 
-  private fun toIndex(location: Vector) = location.x + location.y * width
+  fun toIndex(location: Vector) = location.x + location.y * width
 
-  private fun toIndex(x: Int, y: Int) = x + y * width
+  fun toIndex(x: Int, y: Int) = x + y * width
 
   private fun toLocation(index: Int) = Vector(index % width, index / width)
 
@@ -278,11 +278,24 @@ class NewGrid<T>(val width: Int, val height: Int, data: Collection<T>) {
     return get(location) ?: throw Exception("Invalid location")
   }
 
-  fun validLocation(Vector: Vector): Boolean  {
-    return Vector.x < width && Vector.y < height && Vector.x >= 0 && Vector.y >= 0
+  fun validLocation(vector: Vector): Boolean  {
+    return vector.x < width && vector.y < height && vector.x >= 0 && vector.y >= 0
   }
 
   override fun toString(): String = mapRows { it.joinToString("") }.joinToString("\n")
+
+  fun subGrid(vector: Vector, width: Int, height: Int): NewGrid<T>? {
+    return if (((vector.x + width) <= this.width) && ((vector.y + height) <= this.height)) {
+      val values = (vector.y until (vector.y + height)).flatMap { y ->
+        (vector.x until (vector.x + width)).map { x ->
+          get(x, y)!!
+        }
+      }
+      NewGrid(width, height, values)
+    } else {
+      null
+    }
+  }
 }
 
 interface Grid<T> {

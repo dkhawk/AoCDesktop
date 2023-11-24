@@ -21,9 +21,6 @@ class Day(private val scope: CoroutineScope) {
   val sampleInput = """
   """.trimIndent().split("\n")
 
-  init {
-  }
-
   fun initialize() {
     input = if (useRealData) {
       val (year, day) = packageToYearDay(this.javaClass.packageName)
@@ -32,8 +29,6 @@ class Day(private val scope: CoroutineScope) {
     } else {
       sampleInput
     }
-
-    // inputElves = input.mapIndexed { index, snacks -> toElf(index, snacks) }
   }
 
   fun part1() {
