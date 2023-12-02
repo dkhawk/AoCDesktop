@@ -11,6 +11,7 @@ import utils.packageToYearDay
 
 class Day(private val scope: CoroutineScope) {
   var useRealData by mutableStateOf(false)
+  var part: Int = 0
   private lateinit var input: List<String>
 
   private var job: Job? = null
@@ -21,13 +22,16 @@ class Day(private val scope: CoroutineScope) {
   val sampleInput = """
   """.trimIndent().split("\n")
 
+  val sampleInput2 = """
+  """.trimIndent().split("\n")
+
   fun initialize() {
     input = if (useRealData) {
       val (year, day) = packageToYearDay(this.javaClass.packageName)
       val realInput = InputNew(year, day).readAsLines()
       realInput
     } else {
-      sampleInput
+      if (sampleInput2.isNotEmpty() && part == 2) sampleInput2 else sampleInput
     }
   }
 
