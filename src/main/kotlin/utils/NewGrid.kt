@@ -21,7 +21,16 @@ class NewGrid<T>(val width: Int, val height: Int, initialData : List<T>) {
 
   fun getNeighbors(location: Vector) = location.neighbors().map { it to this[it] }
 
+
   fun getValidNeighbors(location: Vector) = location.neighbors().mapNotNull { neighborLocation ->
+    this[neighborLocation]?.let { neighborValue ->
+      neighborLocation to neighborValue
+    }
+  }
+
+  fun getNeighbors8(location: Vector) = location.neighbors8().map { it to this[it] }
+
+  fun getValidNeighbors8(location: Vector) = location.neighbors8().mapNotNull { neighborLocation ->
     this[neighborLocation]?.let { neighborValue ->
       neighborLocation to neighborValue
     }
@@ -181,5 +190,12 @@ class NewGrid<T>(val width: Int, val height: Int, initialData : List<T>) {
     }
 
     return output.toString()
+  }
+
+  companion object {
+    fun fromCollectionOfStrings(input: Collection<String>): NewGrid<Char> {
+      val value = input.joinToString("").toList()
+      return NewGrid(input.first().length, input.size, value)
+    }
   }
 }

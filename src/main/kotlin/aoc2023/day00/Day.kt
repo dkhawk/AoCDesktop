@@ -22,17 +22,19 @@ class Day(private val scope: CoroutineScope) {
   val sampleInput = """
   """.trimIndent().split("\n")
 
-  val sampleInput2 = """
-  """.trimIndent().split("\n")
+  var sampleInput2 : List<String>? = null
 
   fun initialize() {
     input = if (useRealData) {
       val (year, day) = packageToYearDay(this.javaClass.packageName)
       val realInput = InputNew(year, day).readAsLines()
       realInput
-    } else {
-      if (sampleInput2.isNotEmpty() && part == 2) sampleInput2 else sampleInput
-    }
+    } else (
+      if (sampleInput2 != null && part == 2)
+        sampleInput2!!
+      else
+        sampleInput
+    )
   }
 
   fun part1() {
