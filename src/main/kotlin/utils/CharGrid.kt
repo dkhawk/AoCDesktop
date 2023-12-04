@@ -62,9 +62,9 @@ enum class Direction {
 
 enum class Heading(val vector: Vector) {
   NORTH(Vector(0, -1)),
+  WEST(Vector(-1, 0)),
   EAST(Vector(1, 0)),
-  SOUTH(Vector(0, 1)),
-  WEST(Vector(-1, 0));
+  SOUTH(Vector(0, 1));
 
   fun turnRight(): Heading {
     return values()[(this.ordinal + 1) % values().size]
