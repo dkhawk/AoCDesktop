@@ -3,7 +3,10 @@ package aoc2023.day06
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.MathContext.DECIMAL128
+import kotlin.math.ceil
 import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -44,6 +47,15 @@ class Day(private val scope: CoroutineScope) {
     return x1 to x2
   }
 
+  fun quadratic(a: BigInteger, b: BigInteger, c: BigInteger): Pair<BigDecimal, BigDecimal> {
+    // -b±√(b²-4ac))/(2a)
+    val s = ((b * b) - (BigInteger.valueOf(4) * a * c)).toBigDecimal().sqrt(DECIMAL128)
+    val d = BigInteger.TWO * a
+    val x1 = (-b.toBigDecimal() + s) / d.toBigDecimal()
+    val x2 = (-b.toBigDecimal() - s) / d.toBigDecimal()
+    return x1 to x2
+  }
+
   fun part1() {
     val inputs = input.map { line ->
       line.substringAfter(':').trim().split(Regex(" +")).map { it.toInt() }
@@ -53,9 +65,18 @@ class Day(private val scope: CoroutineScope) {
     val distances = inputs[1]
 
     val races = times.zip(distances)
-    println(races)
 
-    val wins = races.map {(totalTime, distance) ->
+    val answer = races.fold(1) { total, race ->
+      winsCount(race) * total
+    }
+
+    println(answer)
+    // part1_brute(races)
+  }
+
+  private fun part1_brute(races: List<Pair<Int, Int>>) {
+    // Brute force solution!
+    val wins = races.map { (totalTime, distance) ->
       (0..totalTime).count { buttonTime ->
         val travelTime = totalTime - buttonTime
         val speed = buttonTime
@@ -67,6 +88,42 @@ class Day(private val scope: CoroutineScope) {
     println(answer)
   }
 
+  private fun winsCount(race: Pair<Int, Int>): Int {
+    val totalTime = race.first
+    val distance = race.second
+    val q = quadratic(a = -1, b = totalTime, c = -distance)
+
+    var min = ceil(q.first).toInt()
+    var max = ceil(q.second).toInt()
+
+    min = if (raceDistance(min, totalTime) == distance) min + 1 else min
+
+    return max - min
+  }
+
+  private fun winsCount(race: Pair<BigInteger, BigInteger>): BigInteger {
+    val totalTime = race.first
+    val distance = race.second
+    val q = quadratic(a = BigInteger.valueOf(-1), b = totalTime, c = -distance)
+
+    var min = q.first.toBigInteger()
+    var max = q.second.toBigInteger()
+
+    min = if (raceDistance(min, totalTime) > distance) {
+      min
+    } else {
+      min + BigInteger.ONE
+    }
+
+    max = if (raceDistance(max, totalTime) > distance) {
+      max
+    } else {
+      max - BigInteger.ONE
+    }
+
+    return max - min + BigInteger.ONE
+  }
+
   fun part2() {
     val inputs = input.map { line ->
       line.substringAfter(':').replace(" ", "").toBigInteger()
@@ -75,9 +132,16 @@ class Day(private val scope: CoroutineScope) {
     val time = inputs[0]
     val distance = inputs[1]
 
-    println(time)
-    println(distance)
+    val c = winsCount(time to distance)
+    println(c)
 
+    // part2_binarySearch(time, distance)
+  }
+
+  private fun Day.part2_binarySearch(
+    time: BigInteger,
+    distance: BigInteger,
+  ) {
     var guess = time / BigInteger.TWO
 
     var min = BigInteger.ZERO
@@ -120,6 +184,7 @@ class Day(private val scope: CoroutineScope) {
   }
 
   private fun raceDistance(guess: BigInteger, time: BigInteger) = (time - guess) * guess
+  private fun raceDistance(guess: Int, time: Int) = (time - guess) * guess
 
   fun execute() {
     job?.cancel()
