@@ -15,7 +15,7 @@ class Day(private val scope: CoroutineScope) {
 
   private var job: Job? = null
   var running by mutableStateOf(false)
-  var delayTime by mutableStateOf( 500L)
+  var delayTime by mutableStateOf(500L)
   val maxDelay = 500L
 
   val sampleInput = """
@@ -36,129 +36,30 @@ class Day(private val scope: CoroutineScope) {
     }
   }
 
+  fun handToType(hand: String): Type {
+    val (jokers, cards) = hand.partition { it == 'j' }
 
-  fun handToType(hand: String) : Type {
+    if (jokers.length == 5) return Type.FIVE_OF_A_KIND
+
+    val counts =
+      cards.groupingBy { it }.eachCount().values.sortedDescending().mapIndexed { index, count ->
+        if (index == 0) count + jokers.length else count
+      }
+
     return when {
-      isFiveOfAKind(hand) -> Type.FIVE_OF_A_KIND
-      isFourOfAKind(hand) -> Type.FOUR_OF_A_KIND
-      isFullHouse(hand) -> Type.FULL_HOUSE
-      isThreeOfAKind(hand) -> Type.THREE_OF_A_KIND
-      isTwoPair(hand) -> Type.TWO_PAIR
-      isOnePair(hand) -> Type.ONE_PAIR
+      counts.contains(5) -> Type.FIVE_OF_A_KIND
+      counts.contains(4) -> Type.FOUR_OF_A_KIND
+      counts.contains(3) && counts.contains(2) -> Type.FULL_HOUSE
+      counts.contains(3) -> Type.THREE_OF_A_KIND
+      counts.count { it == 2 } == 2 -> Type.TWO_PAIR
+      counts.contains(2) -> Type.ONE_PAIR
       else -> Type.NONE
     }
   }
 
-  private fun isFullHouse(hand: String): Boolean {
-    if (useJokers) {
-      val (jokers, rest) = hand.partition { it == 'J' }
-      if (jokers.isNotEmpty()) {
-        // handle jokers
-        val groupCounts = rest.groupBy { it }.map { it.key to it.value.size }.map { it.second }.sortedDescending()
-        return when (jokers.length) {
-          1 -> groupCounts == listOf(2, 2)
-          else -> false  // 4 is too many!  2 -> 4 of a kind
-        }
-      }
-    }
-
-    val groupCounts = hand.groupBy { it }.map { it.key to it.value.size }.map { it.second }.sortedDescending()
-    return groupCounts == listOf(3, 2)
-  }
-
-  private fun isFourOfAKind(hand: String): Boolean {
-    if (useJokers) {
-      val (jokers, rest) = hand.partition { it == 'J' }
-      if (jokers.isNotEmpty()) {
-        // handle jokers
-        val groupCounts = rest.groupBy { it }.map { it.key to it.value.size }.map { it.second }.sortedDescending()
-        return when (jokers.length) {
-          3 -> groupCounts.size == 2
-          2 -> groupCounts == listOf(2, 1)
-          1 -> groupCounts == listOf(3, 1)
-          else -> false  // 4 is too many!
-        }
-      }
-    }
-
-    return hand.groupBy { it }.map { it.key to it.value.size }.any { it.second == 4 }
-  }
-
-  private fun isThreeOfAKind(hand: String): Boolean {
-    if (useJokers) {
-      val (jokers, rest) = hand.partition { it == 'J' }
-      if (jokers.isNotEmpty()) {
-        // handle jokers
-        val groupCounts = rest.groupBy { it }.map { it.key to it.value.size }.map { it.second }.sortedDescending()
-        return when (jokers.length) {
-          2 -> groupCounts == listOf(1, 1, 1)
-          1 -> groupCounts == listOf(2, 1, 1)
-          else -> false
-        }
-      }
-    }
-
-    val groupCounts = hand.groupBy { it }.map { it.key to it.value.size }.map { it.second }.sortedDescending()
-    return groupCounts == listOf(3, 1, 1)
-  }
-
-  private fun isOnePair(hand: String): Boolean {
-    if (useJokers) {
-      val (jokers, rest) = hand.partition { it == 'J' }
-      if (jokers.isNotEmpty()) {
-        // handle jokers
-        val groupCounts = rest.groupBy { it }.map { it.key to it.value.size }.map { it.second }.sortedDescending()
-        return when (jokers.length) {
-          1 -> groupCounts == listOf(1, 1, 1, 1)
-          else -> false
-        }
-      }
-    }
-
-    val groupCounts = hand.groupBy { it }.map { it.key to it.value.size }.map { it.second }.sortedDescending()
-    return groupCounts == listOf(2, 1, 1, 1)
-  }
-
-  private fun isTwoPair(hand: String): Boolean {
-    if (useJokers) {
-      val (jokers, _) = hand.partition { it == 'J' }
-      if (jokers.isNotEmpty()) {
-        // handle jokers
-        // Not possible to get two pair with jokers --> all possibilities can be better hands
-        return false
-      }
-    }
-
-    val groupCounts = hand.groupBy { it }.map { it.key to it.value.size }.map { it.second }.sortedDescending()
-    return groupCounts == listOf(2, 2, 1)
-  }
-
-  private fun isFiveOfAKind(hand: String): Boolean {
-    if (useJokers) {
-      val (jokers, rest) = hand.partition { it == 'J' }
-      if (jokers.isNotEmpty()) {
-        // handle jokers
-        if (jokers.length >= 4) {
-          return true
-        }
-        val groupCounts = rest.groupBy { it }.map { it.key to it.value.size }.map { it.second }.sortedDescending()
-        return groupCounts.size == 1
-      }
-    }
-
-    val f = hand.first()
-    return hand.all { it == f }
-  }
-
   data class Hand(val cardString: String, val type: Type) : Comparable<Hand> {
     val comparableCardString = cardString.map {
-      val cm = if (Day.useJokers) cardValuesWithJokers else cardValues
-      when {
-        it.isDigit() -> it
-        else -> {
-          '0' + cm.getValue(it)
-        }
-      }
+      '0' + cardValues.getValue(it)
     }.toString()
 
     override fun compareTo(other: Hand): Int {
@@ -167,34 +68,21 @@ class Day(private val scope: CoroutineScope) {
   }
 
   fun part1() {
-    val bids = input.map { it.substring(0, 5) to it.substring(6).trim().toInt() }.toMap()
-    val hands = bids.keys.map { Hand(it, handToType(it)) }.sorted()
-    val winnings = hands.foldIndexed(0) { index, total, hand  ->
-      (bids[hand.cardString]!! * (index + 1)) + total
-    }
-    println(winnings)
+    val bids = input.associate { it.substring(0, 5) to it.substring(6).trim().toInt() }
+    solve(bids)
   }
 
   fun part2() {
-    useJokers = true
-    val bids = input.map { it.substring(0, 5) to it.substring(6).trim().toInt() }.toMap()
+    val bids =
+      input.associate {
+        it.substring(0, 5).replace('J', 'j') to it.substring(6).trim().toInt()
+      }
+    solve(bids)
+  }
+
+  private fun solve(bids: Map<String, Int>) {
     val hands = bids.keys.map { Hand(it, handToType(it)) }.sorted()
-
-    // println(hands.joinToString("\n"))
-    // println(hands.map { it.comparableCardString }.joinToString("\n"))
-
-    // println(handToType("JJQQA"))
-    // printHand("JJQQQ")
-    // printHand("JQQQQ")
-    // printHand("JJQQA")
-    // printHand("JJJQA")
-    // printHand("JQAQA")
-    // printHand("JJAQA")
-    // printHand("JJJQK")
-    // printHand("JJAKQ")
-    // printHand("JAAKQ")
-
-    val winnings = hands.foldIndexed(0) { index, total, hand  ->
+    val winnings = hands.foldIndexed(0) { index, total, hand ->
       (bids[hand.cardString]!! * (index + 1)) + total
     }
     println(winnings)
@@ -250,22 +138,13 @@ class Day(private val scope: CoroutineScope) {
       FIVE_OF_A_KIND,
     }
 
-    var useJokers = false
-
     val cardValues = mapOf(
       'A' to 14,
       'K' to 13,
       'Q' to 12,
       'J' to 11,
       'T' to 10,
-    ).withDefault { it.digitToInt() }
-
-    val cardValuesWithJokers = mapOf(
-      'A' to 14,
-      'K' to 13,
-      'Q' to 12,
-      'J' to 0,
-      'T' to 10,
+      'j' to 0
     ).withDefault { it.digitToInt() }
   }
 }

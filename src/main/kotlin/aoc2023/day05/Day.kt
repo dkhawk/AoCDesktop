@@ -154,6 +154,12 @@ class Day(private val scope: CoroutineScope) {
     val seeds = parseSeeds(input)
     buildRangeMaps(input)
 
+    rangeMaps.forEach { (key, value) ->
+      println(key)
+      println(value.joinToString("\n"))
+      println()
+    }
+
     /*
     Seed 79, soil 81, fertilizer 81, water 81, light 74, temperature 78, humidity 78, location 82.
     Seed 14, soil 14, fertilizer 53, water 49, light 42, temperature 42, humidity 43, location 43.
@@ -165,20 +171,20 @@ class Day(private val scope: CoroutineScope) {
     // println(remap(m, 53))
     //
     // return
-    val maps = progression.reversed().map { rangeMaps.getValue(it) }
-
-    val goal = 0
-
-    val closest = seeds.minOf {seed ->
-      // print("$seed -> ")
-      val location = maps.fold(seed) { value, map ->
-        remap(map, value) // .also { print("$it, ") }
-      }
-      // println()
-      location
-    }
-
-    println(closest)
+    // val maps = progression.reversed().map { rangeMaps.getValue(it) }
+    //
+    // val goal = 0
+    //
+    // val closest = seeds.minOf {seed ->
+    //   // print("$seed -> ")
+    //   val location = maps.fold(seed) { value, map ->
+    //     remap(map, value) // .also { print("$it, ") }
+    //   }
+    //   // println()
+    //   location
+    // }
+    //
+    // println(closest)
   }
 
   fun execute() {
