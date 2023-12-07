@@ -327,11 +327,42 @@ class Day(private val scope: CoroutineScope) {
 
   fun part2() {
     // part2Tests()
-    // part2Real()
-    Day15.test()
+    part2Real()
+    // Day15.test()
+
+    /*
+    Elf at 19, 21 (59)
+Elf at 21, 12 (191)
+Elf at 8, 18 (179)
+Elf at 13, 20 (200)
+Elf at 14, 11 (17)
+Elf at 10, 18 (200)
+Elf at 11, 12 (29)
+Elf at 12, 11 (41)
+Elf at 4, 15 (200)
+Elf at 10, 16 (119)
+Finished 50 full rounds
+Remaining hitpoints: 1235
+Outcome: 61750
+All elves survived with attack power of 17
+
+     */
   }
 
   fun part2Real(): Pair<Int, GameResult> {
+    val grid = NewGrid.fromCollectionOfStrings(input)
+    println(grid)
+
+    var players = grid.findAll { _, c -> c == 'E' || c == 'G' }.map { (location, c) ->
+      when (c) {
+        'E' -> Player.Elf(location, 50)
+        'G' -> Player.Goblin(location)
+        else -> throw Exception("Unexpected character $c")
+      }
+    }
+
+    println(players.joinToString("\n"))
+
     var maxElfPower = 200
     var minElfPower = 4
 
@@ -365,6 +396,7 @@ class Day(private val scope: CoroutineScope) {
 
     println(bestResult.players.joinToString("\n"))
 
+    println("Elf power: $elfPower")
     val answer = bestResult.lastRound * hp
     println("answer: ${bestResult.lastRound} * $hp => $answer")
     println("or answer: ${bestResult.lastRound + 1} * $hp => ${(bestResult.lastRound + 1) * hp}")
