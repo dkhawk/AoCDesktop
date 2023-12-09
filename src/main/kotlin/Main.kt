@@ -1,4 +1,4 @@
-import aoc2023.day07.Day
+import aoc2023.day09.Day
 // import aoc2018.day15.Day
 import kotlinx.coroutines.runBlocking
 

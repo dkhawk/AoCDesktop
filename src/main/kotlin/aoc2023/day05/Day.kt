@@ -3,6 +3,8 @@ package aoc2023.day05
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import java.lang.Long.max
+import java.lang.Long.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -72,6 +74,8 @@ class Day(private val scope: CoroutineScope) {
 
   data class RangeMap(val destinationStart: Long, val sourceStart: Long, val range: Long) {
     fun remap(value: Long) = (value - sourceStart) + destinationStart
+    fun toSourceRange() = sourceStart until (sourceStart + range)
+    fun toDestinationRange() = destinationStart until (destinationStart + range)
   }
 
   private fun RangeMap(line: String): RangeMap {
@@ -150,15 +154,68 @@ class Day(private val scope: CoroutineScope) {
     return map.find { value in it.sourceStart..(it.sourceStart + it.range) }?.remap(value) ?: return value
   }
 
+  data class MapperRanges(val source: LongRange, val destination: LongRange) {
+    fun remapValue(value: Long) = value + (destination.first - source.first)
+  }
+
   fun part2() {
+    // println((0L..10L).splitBy(11L..20L))
+    // println((11L..20L).splitBy(0L..10L))
+    // println((0L..10L).splitBy(5L..15L))
+    // println((5L..7L).splitBy(0L..10L))
+    // showSplit(0L..10L, 11L..20L)
+    // showSplit(11L..20L, 0L..10L)
+    // showSplit(0L..10L, 5L..15L)
+    // showSplit(5L..7L, 0L..10L)
+    // showSplit(5L..15L, 0L..10L)
+    //
+    // return
+
+
     val seeds = parseSeeds(input)
     buildRangeMaps(input)
 
-    rangeMaps.forEach { (key, value) ->
-      println(key)
-      println(value.joinToString("\n"))
-      println()
+    // rangeMaps.forEach { (key, value) ->
+    //   println(key)
+    //   println(value.joinToString("\n"))
+    //   println()
+    // }
+
+    val mappers = progression.map { rangeMaps.getValue(it) }.map { item -> item.map {MapperRanges(it.toSourceRange(), it.toDestinationRange()) } }
+
+    println(seeds)
+
+    // Convert the seeds to ranges
+    val seedRanges = seeds.windowed(2, 2, false).map {
+      it.first() until (it.first() + it.last())
     }
+    println(seedRanges)
+
+    val remapped = mappers.fold(seedRanges) { rangesToRemap, mapper ->
+      rangesToRemap.flatMap { it.remap(mapper) }
+    }
+
+    println(remapped)
+
+    return
+
+    // map from the seedRanges to the first mapper source ranges
+    val result = seedRanges.map { seedRange ->
+      println("---------")
+      seedRange.remap(mappers.first()).also { println(it.joinToString("\n")) }
+      //
+      // val sr = r1.map { it.source }.map {
+      //   val answer = seedRange.splitBy(it)
+      //   println("$seedRange split by $it is $answer")
+      //   answer
+      // }
+      // println(sr.joinToString("\n"))
+      // sr
+    }
+
+    println("======================")
+
+    println(result.joinToString("\n"))
 
     /*
     Seed 79, soil 81, fertilizer 81, water 81, light 74, temperature 78, humidity 78, location 82.
@@ -187,6 +244,14 @@ class Day(private val scope: CoroutineScope) {
     // println(closest)
   }
 
+  private fun showSplit(
+    rangeToSplit: LongRange,
+    splittingRange: LongRange,
+  ) {
+    val newRanges = rangeToSplit.splitBy(splittingRange)
+    println("$rangeToSplit split by $splittingRange => $newRanges")
+  }
+
   fun execute() {
     job?.cancel()
     job = scope.launch {
@@ -212,4 +277,75 @@ class Day(private val scope: CoroutineScope) {
     initialize()
     reset()
   }
+
+  companion object {
+    val cameFrom = mutableMapOf<LongRange, LongRange>()
+  }
+}
+
+private fun LongRange.remap(mappers: List<Day.MapperRanges>): List<LongRange> {
+  val remapped = mutableListOf<LongRange>()
+  val unmapped = ArrayDeque<LongRange>(100)
+
+  unmapped.add(this)
+
+  val mapperIter = mappers.iterator()
+
+  while (unmapped.isNotEmpty() && mapperIter.hasNext()) {
+    val range = unmapped.removeFirst()
+    val mapper = mapperIter.next()
+
+    if (range.last < mapper.source.first || range.first > mapper.source.last) {
+      // total miss
+      unmapped.add(range)
+    } else {
+      // Unmapped before
+      if (range.first < mapper.source.first)
+        unmapped.add(range.first until mapper.source.first)
+      // Unmapped after
+      if (range.last > mapper.source.last)
+        unmapped.add((mapper.source.last + 1) .. range.last)
+
+      // Now remap the overlapping parts
+      val start = max(range.first, mapper.source.first)
+      val end = min(range.last, mapper.source.last)
+
+      val newRange = mapper.remapValue(start)..mapper.remapValue(end)
+      remapped.add(newRange)
+      Day.cameFrom[newRange] = range
+    }
+  }
+
+  remapped.addAll(unmapped)
+
+  return remapped.toList()
+}
+
+private fun LongRange.splitBy(other: LongRange): MutableList<LongRange> {
+  val result = mutableListOf<LongRange>()
+  if (this.last < other.first) {
+    result.add(this)
+  }
+
+  if (this.first > other.last) {
+    result.add(this)
+  }
+
+  if (this.first <= other.first) {
+    if (this.last in other) {
+      result.add(this.first until other.first)
+      result.add(other.first .. this.last)
+    }
+  }
+
+  if (this.first in other && this.last in other) {
+    result.add(this)
+  }
+
+  if (this.first in other && this.last > other.last) {
+    result.add(first..other.last)
+    result.add((other.last + 1)..last)
+  }
+
+  return result
 }
