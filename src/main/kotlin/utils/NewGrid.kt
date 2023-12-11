@@ -1,10 +1,21 @@
 package utils
 
-class NewGrid<T>(val width: Int, val height: Int, initialData : List<T>) {
+class NewGrid<T>(width: Int, height: Int, initialData : List<T>) {
   var data: MutableList<T> = initialData.toMutableList()
+
+  var width: Int
+    private set
+
+  var height: Int
+    private set
 
   constructor(width: Int, height: Int, value: T) :
     this(width, height, MutableList(width*height) { value }) {
+  }
+
+  init {
+    this.width = width
+    this.height = height
   }
 
   fun <R> map(function: (Vector, T) -> R?): List<R?> {
@@ -94,6 +105,17 @@ class NewGrid<T>(val width: Int, val height: Int, initialData : List<T>) {
     }
   }
 
+  fun filteredRowsIndexed(predicate: (Int, List<T>) -> Boolean): List<Pair<Int, List<T>>> {
+    return buildList {
+      (0 until height).forEach { row ->
+        val data = getRow(row)
+        if (predicate(row, data)) {
+          add(row to data)
+        }
+      }
+    }
+  }
+
   fun <R> mapRowIndexed(function: (Int, List<T>) -> R): List<R> {
     return (0 until height).map {
       function(it, getRow(it))
@@ -115,6 +137,17 @@ class NewGrid<T>(val width: Int, val height: Int, initialData : List<T>) {
   fun forEachColumnIndexed(function: (Int, List<T>) -> Unit) {
     (0 until width).forEach { col ->
       function(col, getColumn(col))
+    }
+  }
+
+  fun filteredColumnsIndexed(predicate: (Int, List<T>) -> Boolean): List<Pair<Int, List<T>>> {
+    return buildList {
+      (0 until width).forEach { column ->
+        val data = getColumn(column)
+        if (predicate(column, data)) {
+          add(column to data)
+        }
+      }
     }
   }
 
@@ -190,6 +223,49 @@ class NewGrid<T>(val width: Int, val height: Int, initialData : List<T>) {
     }
 
     return output.toString()
+  }
+
+  fun toStringWithHighlights(vararg highlights: Pair<String, (T, Vector) -> Boolean>): String {
+    val output = StringBuilder()
+    output.append("$width, $height\n")
+    var row = 0
+
+    data.toList().windowed(width, width) {
+      output.append(
+        it.withIndex().joinToString("") { (index, c) ->
+          highlights.firstOrNull { cell -> cell.second(c, Vector(index, row)) }?.let { (color, _) ->
+            color + c.toString() + NO_COLOR
+          } ?: c.toString()
+        }
+      ).append('\n')
+      row += 1
+    }
+
+    return output.toString()
+  }
+
+  fun addRow(rowIndex: Int, t: T) {
+    data.addAll(toIndex(0, rowIndex), List(width) { t })
+    height += 1
+  }
+
+  fun replaceRow(rowIndex: Int, t: T) {
+    (toIndex(0, rowIndex) until toIndex(width, rowIndex)).forEach {
+      data[it] = t
+    }
+  }
+
+  fun addColumn(colIndex: Int, t: T) {
+    (0 until height).reversed().forEach { row ->
+      data.add(toIndex(colIndex, row), t)
+    }
+    width += 1
+  }
+
+  fun replaceColumn(colIndex: Int, t: T) {
+    (0 until height).reversed().forEach { row ->
+      this[Vector(colIndex, row)] = t
+    }
   }
 
   companion object {

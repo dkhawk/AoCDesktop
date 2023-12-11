@@ -46,13 +46,26 @@ class Day(private val scope: CoroutineScope) {
     ZZZ = (ZZZ, ZZZ)
   """.trimIndent().split("\n")
 
+  val sampleInputPart2 = """
+    LR
+
+    11A = (11B, XXX)
+    11B = (XXX, 11Z)
+    11Z = (11B, XXX)
+    22A = (22B, XXX)
+    22B = (22C, 22C)
+    22C = (22Z, 22Z)
+    22Z = (22B, 22B)
+    XXX = (XXX, XXX)
+  """.trimIndent().split("\n")
+
   fun initialize() {
     input = if (useRealData) {
       val (year, day) = packageToYearDay(this.javaClass.packageName)
       val realInput = InputNew(year, day).readAsLines()
       realInput
     } else {
-      sampleInput
+      sampleInputPart2
     }
   }
 
@@ -88,47 +101,49 @@ class Day(private val scope: CoroutineScope) {
 
   private fun readTurns(): List<Char> = input.first().toList()
 
+  data class Point(val node: String, val turnIndex: Int)
+
   fun part2() {
     val turns = readTurns()
     val nodes = readNodes()
 
+    // println(turns)
+    // println(nodes)
+
     var currentNodes = nodes.keys.filter { it.last() == 'A' }
 
-    var nextTurnIndex = 0
-    var steps = 0
-
-    val firstZs = currentNodes.map { -1 }.toMutableList()
-
-    while (currentNodes.any { it.last() != 'Z' }) {
-      val nextTurn = turns[nextTurnIndex]
-
-      currentNodes = currentNodes.map {
-        nodes.getValue(it).let { if (nextTurn == 'L') it.first else it.second }
-      }
-
-      var changed = false
-      currentNodes.forEachIndexed { index, node ->
-        if (node.last() == 'Z') {
-          if (firstZs[index] == -1) {
-            firstZs[index] = steps
-            changed = true
-          }
-        }
-      }
-
-      if (changed) {
-        println(firstZs)
-      }
-
-      if (firstZs.all { it > -1 }) {
-        break
-      }
-
-      nextTurnIndex = (nextTurnIndex + 1) % turns.size
-      steps += 1
+    val cycles = currentNodes.map {
+      mutableMapOf<Point, MutableList<Long>>()
     }
 
-    println(steps)
+    var nextTurnIndex = 0
+    var steps = 0L
+
+    val counts = currentNodes.map { node ->
+      // Get to the 'Z' at the same step in the turns
+      // Or get back to the start?
+      var c = 0
+      var n = node
+
+      var repeats = 3
+
+      println(turns.size)
+
+      while (true) {
+        val turn = turns[c % turns.size]
+        n = nodes.getValue(n).let { if (turn == 'L') it.first else it.second }
+        c++
+        // if (n.endsWith('Z')) break
+        if (n.endsWith('Z')) {
+          println("$c: ${c % turns.size}")
+          if (repeats-- < 0) break
+        }
+      }
+      c
+    }
+
+    println(counts)
+    // 15995167053923 -- need an LCM function!!!
   }
 
   fun execute() {
