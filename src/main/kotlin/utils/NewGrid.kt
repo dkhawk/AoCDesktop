@@ -122,9 +122,29 @@ class NewGrid<T>(width: Int, height: Int, initialData : List<T>) {
     }
   }
 
+  fun replaceRowsIndexed(function: (Int, List<T>) -> List<T>) {
+    (0 until height).map {
+      function(it, getRow(it))
+    }.forEachIndexed { rowIndex, rowData ->
+      rowData.forEachIndexed { colIndex, t ->
+        set(colIndex, rowIndex, t)
+      }
+    }
+  }
+
   fun <R> mapColumnIndexed(function: (Int, List<T>) -> R): List<R> {
     return (0 until width).map {
       function(it, getColumn(it))
+    }
+  }
+
+  fun replaceColumnsIndexed(function: (Int, List<T>) -> List<T>) {
+    (0 until width).map {
+      function(it, getColumn(it))
+    }.forEachIndexed { colIndex, columnData ->
+      columnData.forEachIndexed { rowIndex, t ->
+        set(colIndex, rowIndex, t)
+      }
     }
   }
 
