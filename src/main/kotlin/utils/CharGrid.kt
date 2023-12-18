@@ -24,7 +24,7 @@ data class Vector(val x: Int = 0, val y: Int = 0) : Comparable<Vector> {
     return this + heading.vector
   }
 
-  fun directionTo(end: Vector): Vector = (end - this)
+  fun directionTo(end: Vector) = (end - this)
 
   fun distance(goal: Vector): Double {
     val dx = goal.x - x
@@ -55,7 +55,7 @@ data class Vector(val x: Int = 0, val y: Int = 0) : Comparable<Vector> {
   fun inBounds(min: Vector, max: Vector) = this in min..max
   fun neighbors8() = Heading8.values().map { heading -> this.advance(heading) }
   fun toHeading() = Heading.values().first { this == it.vector }
-  fun headingTo(destination: Vector) = directionTo(destination).toHeading()
+  fun headingTo(destination: Vector) = directionTo(destination).sign.toHeading()
 }
 
 enum class Direction {
