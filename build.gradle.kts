@@ -27,7 +27,7 @@ object Versions {
 
 dependencies {
     implementation("com.google.truth:truth-parent:1.1.3")
-  testImplementation(kotlin("test"))
+    testImplementation(kotlin("test"))
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.material:material-icons-extended-desktop:1.1.1")
     implementation("com.google.truth:truth:1.1.3")
