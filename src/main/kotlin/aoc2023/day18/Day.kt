@@ -3,7 +3,6 @@ package aoc2023.day18
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -56,13 +55,15 @@ class Day(private val scope: CoroutineScope) {
     RIGHT,
   }
 
-  data class DigStep(val direction: Heading, val distance: Int, val color: Color)
+  data class DigStep(val direction: Heading, val distance: Int, val color: String)
+
+  data class Step(val direction: Heading, val distance: Int)
 
   fun parse(line: String): DigStep {
     val parts = line.split(" ")
     val direction = parts[0].first().toHeading()
     val distance = parts[1].toInt()
-    val color = Color(parts[2].substringAfter('#').dropLast(1).toInt(16))
+    val color = parts[2].substringAfter('#').dropLast(1)
     return DigStep(direction, distance, color)
   }
 
@@ -123,7 +124,81 @@ class Day(private val scope: CoroutineScope) {
     println(volume)
   }
 
+  sealed class GridPart {
+    data class Line(val index: Int): GridPart()
+    data class GridRange(val range: IntRange): GridPart()
+  }
+
   fun part2() {
+    val steps = input.map { parse(it) }.map { it.color.toStep() }
+
+    var location = Vector(0, 0)
+    var maxX = Int.MIN_VALUE
+    var maxY = Int.MIN_VALUE
+
+    var minX = Int.MAX_VALUE
+    var minY = Int.MAX_VALUE
+
+    val path: List<Vector> = buildList {
+      add(location)
+      steps.forEach { digStep ->
+        location += (digStep.direction.vector * digStep.distance)
+        add(location)
+        maxX = maxX.coerceAtLeast(location.x)
+        maxY = maxY.coerceAtLeast(location.y)
+
+        minX = minX.coerceAtMost(location.x)
+        minY = minY.coerceAtMost(location.y)
+      }
+    }
+
+    val min = Vector(minX, minY)
+    val max = Vector(maxX, maxY)
+
+    println(min)
+    println(max)
+
+    println("path")
+    println(path.joinToString("\n"))
+
+    println()
+    val xs = path.map { it.x }.toSortedSet()
+    val ys = path.map { it.y }.toSortedSet()
+
+    println("x")
+    println(xs.joinToString("\n"))
+
+    println()
+    println("y")
+    println(ys.joinToString("\n"))
+
+    val xGridParts = buildList {
+      xs.windowed(2, 1).forEach {
+        add(GridPart.Line(it.first()))
+        if (it.first() != it.last()) {
+          add(GridPart.GridRange((it.first() + 1) until it.last()))
+        }
+        add(GridPart.Line(it.last()))
+      }
+    }
+
+    val yGridParts = buildList {
+      ys.windowed(2, 1).forEach {
+        add(GridPart.Line(it.first()))
+        if (it.first() != it.last()) {
+          add(GridPart.GridRange((it.first() + 1) until it.last()))
+        }
+        add(GridPart.Line(it.last()))
+      }
+    }
+
+    val width = xGridParts.size + 3 // Borders + exclusive
+    val height = yGridParts.size + 3 // Borders + exclusive
+
+
+
+    println()
+    println(xGridParts.joinToString("\n"))
   }
 
   fun execute() {
@@ -151,6 +226,19 @@ class Day(private val scope: CoroutineScope) {
     initialize()
     reset()
   }
+}
+
+private fun String.toStep(): Day.Step {
+  val distance = subSequence(0, 5).toString().toInt(16)
+  val heading = when (last()) {
+    '0' -> Heading.EAST
+    '1' -> Heading.SOUTH
+    '2' -> Heading.WEST
+    '3' -> Heading.NORTH
+    else -> throw Exception("Illegal direction number: ${last()}")
+  }
+
+  return Day.Step(heading, distance)
 }
 
 private fun <T> NewGrid<T>.floodFill(start: Vector, char: T) {
