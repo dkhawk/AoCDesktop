@@ -77,7 +77,12 @@ enum class Heading(val vector: Vector) {
   }
 
   fun opposite() : Heading {
-    return values()[(this.ordinal + 2) % values().size]
+    return when (this) {
+      NORTH -> SOUTH
+      WEST -> EAST
+      EAST -> WEST
+      SOUTH -> NORTH
+    }
   }
 
   fun turnTo(other: Heading): Int {
@@ -115,6 +120,16 @@ data class Vector3d(val x: Int, val y: Int, val z: Int) {
     val dz2 = (z - other.z).toDouble().pow(2)
     return sqrt(dx2 + dy2 + dz2)
   }
+
+  fun headingTo(destination: Vector3d) = (destination - this).sign().toHeading3d()
+
+  fun toHeading3d(): Heading3d = Heading3d.values().first { it.vector == this }
+
+  fun sign() = Vector3d(x.sign, y.sign, z.sign)
+
+  fun advance(heading: Heading3d) = this + heading.vector
+
+  fun advance(heading: Direction3d) = this + heading.vector
 }
 
 enum class Heading3d(val vector: Vector3d) {
@@ -123,7 +138,16 @@ enum class Heading3d(val vector: Vector3d) {
   FRONT(Vector3d(0, -1, 0)),
   BACK(Vector3d(0, 1, 0)),
   LEFT(Vector3d(-1, 0, 0)),
-  RIGHT(Vector3d(1, 0, 0)),
+  RIGHT(Vector3d(1, 0, 0))
+}
+
+enum class Direction3d(val vector: Vector3d) {
+  UP_Z(Vector3d(0, 0, 1)),
+  DOWN_Z(Vector3d(0, 0, -1)),
+  UP_Y(Vector3d(0, 1, 0)),
+  DOWN_Y(Vector3d(0, -1, 0)),
+  UP_X(Vector3d(1, 0, 0)),
+  DOWN_X(Vector3d(-1, 0, 0))
 }
 
 enum class Heading8(val vector: Vector) {
